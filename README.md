@@ -1,4 +1,10 @@
+DiaPro
+======
 
+DiaPro is VST a dialog/vocal processor supporting VST2.x and VST3.
+
+Prerequisites
+-------------
 
 - Download and put it somewhere [VST 3 Audio Plug-Ins SDK](https://www.steinberg.net/en/company/developers.html)
 - Run `copy_vst2_to_vst3_sdk.sh` in the directory
