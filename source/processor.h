@@ -56,7 +56,54 @@ public:
 	Steinberg::tresult PLUGIN_API getState (Steinberg::IBStream* state) SMTG_OVERRIDE;
 
 protected:
+    template <typename SampleType>
+    void processGain (SampleType** inOut, int nrChannels, int nrSamples, float gain);
 
+    template <typename SampleType>
+    void processCompressor (SampleType** inOut, int nrChannels, int nrSamples);
+
+    template <typename SampleType>
+    void processVuPPM (SampleType** in, float *vuPPM, int nrChannels, int nrSamples);
+
+    void setCompressorParams(float thresh, float attime, float reltime, float ratio, float mix);
+    void handleParamChanges(Steinberg::Vst::IParameterChanges* paramChanges);
+
+    // Gain
+	float fGain;
+
+    // Compressor
+    struct {
+        // params
+        bool softknee; // TODO Make knee tunable
+        float thresh;
+        float attime; // attack time
+        float reltime; // release time
+        float cratio;
+        float mix; // mix original and compressed 0..1
+        float rmscoef;
+        float atcoef;
+        float ratatcoef;
+        float relcoef;
+        float ratrelcoef;
+        float cthreshv;
+        float gr_meter_decay;
+
+        // process vars
+        float runave[2];
+        float runmax[2];
+        float rundb[2];
+        float overdb[2];
+        float averatio[2];
+        float runratio[2];
+        float maxover[2];
+        float gr_meter[2];
+    } comp;
+
+    // VU
+	float fVuPPMInOld[2];
+	float fVuPPMOutOld[2];
+
+    bool bBypass {false};
 };
 
 }

@@ -3,28 +3,27 @@
 //------------------------------------------------------------------------
 
 #include "processor.h"
+#include "process.h"
 #include "cids.h"
+#include "paramids.h"
 
 #include "base/source/fstreamer.h"
+#include "public.sdk/source/vst/vstaudioprocessoralgo.h"
 #include "pluginterfaces/vst/ivstparameterchanges.h"
 
-using namespace Steinberg;
-
 namespace MyVst {
-//------------------------------------------------------------------------
-// DiaProProcessor
-//------------------------------------------------------------------------
+using namespace Steinberg;
+using namespace Steinberg::Vst;
+
 DiaProProcessor::DiaProProcessor ()
 {
 	//--- set the wanted controller for our processor
 	setControllerClass (kDiaProControllerUID);
 }
 
-//------------------------------------------------------------------------
 DiaProProcessor::~DiaProProcessor ()
 {}
 
-//------------------------------------------------------------------------
 tresult PLUGIN_API DiaProProcessor::initialize (FUnknown* context)
 {
 	// Here the Plug-in will be instanciated
@@ -47,26 +46,124 @@ tresult PLUGIN_API DiaProProcessor::initialize (FUnknown* context)
 	return kResultOk;
 }
 
-//------------------------------------------------------------------------
 tresult PLUGIN_API DiaProProcessor::terminate ()
 {
 	// Here the Plug-in will be de-instanciated, last possibility to remove some memory!
 
 	//---do not forget to call parent ------
-	return AudioEffect::terminate ();
+	return AudioEffect::terminate();
 }
 
-//------------------------------------------------------------------------
+void DiaProProcessor::setCompressorParams(float thresh, float attime, float reltime, float ratio, float mix)
+{
+    float sampleRate = (float)this->processSetup.sampleRate;
+
+    comp.thresh = thresh;
+    comp.attime = attime;
+    comp.reltime = reltime;
+    comp.cratio = ratio;
+    comp.mix = 1; // mix original and compressed 0..1
+    comp.atcoef = exp(-1 / (comp.attime * sampleRate));
+    comp.relcoef = exp(-1 / (comp.reltime * sampleRate));
+    float cthresh = (comp.softknee) ? (comp.thresh - 3) : comp.thresh;
+    comp.cthreshv = exp(cthresh * DB2LOG);
+}
+
 tresult PLUGIN_API DiaProProcessor::setActive (TBool state)
 {
 	//--- called when the Plug-in is enable/disable (On/Off) -----
+    if (state) {
+        float sampleRate = (float)this->processSetup.sampleRate;
+
+        /*
+         * Init comp
+         */
+        comp.softknee = false;
+        setCompressorParams(0, 0.010f, 0.100f, 0, 1);
+        comp.rmscoef = 0;
+        comp.ratatcoef = exp(-1 / (0.00001f * sampleRate));
+        comp.ratrelcoef = exp(-1 / (0.5f * sampleRate));
+        comp.gr_meter_decay = exp(1 / (1 * sampleRate));
+
+        comp.runave[0] = 0;
+        comp.runave[1] = 0;
+        comp.runmax[0] = 0;
+        comp.runmax[1] = 0;
+        comp.rundb[0] = 0;
+        comp.rundb[1] = 0;
+        comp.overdb[0] = 0;
+        comp.overdb[1] = 0;
+        comp.averatio[0] = 0;
+        comp.averatio[1] = 0;
+        comp.runratio[0] = 0;
+        comp.runratio[1] = 0;
+        comp.maxover[0] = 0;
+        comp.maxover[1] = 0;
+        comp.gr_meter[0] = 1.0f;
+        comp.gr_meter[1] = 1.0f;
+    }
+
 	return AudioEffect::setActive (state);
 }
 
-//------------------------------------------------------------------------
+void DiaProProcessor::handleParamChanges(IParameterChanges* paramChanges)
+{
+        int32 numParamsChanged = paramChanges->getParameterCount ();
+        // for each parameter which are some changes in this audio block:
+        for (int32 i = 0; i < numParamsChanged; i++) {
+            IParamValueQueue* paramQueue = paramChanges->getParameterData (i);
+            if (paramQueue) {
+                ParamValue value;
+                int32 sampleOffset;
+                int32 numPoints = paramQueue->getPointCount ();
+                switch (paramQueue->getParameterId ()) {
+                    case kGainId:
+                        // we use in this example only the last point of the queue.
+                        // in some wanted case for specific kind of parameter it makes sense to
+                        // retrieve all points and process the whole audio block in small blocks.
+                        if (paramQueue->getPoint(numPoints - 1, sampleOffset, value) == kResultTrue) {
+                            fGain = norm2factor((float)value, GAIN_MIN, GAIN_MAX);
+                        }
+                        break;
+
+                    case kCompThreshId:
+                        if (paramQueue->getPoint(numPoints - 1, sampleOffset, value) == kResultTrue) {
+                            float thresh = norm2db((float)value, COMP_THRESH_MIN, 0);
+                            setCompressorParams(thresh, comp.attime, comp.reltime, comp.cratio, comp.mix);
+                        }
+                        break;
+
+                    case kCompAtttimeId:
+                        if (paramQueue->getPoint(numPoints - 1, sampleOffset, value) == kResultTrue) {
+                            float attime = 0; // TODO
+                            //setCompressorParams(comp.thresh, attime, comp.reltime, comp.cratio, comp.mix);
+                        }
+                        break;
+
+                    case kCompReltimeId:
+                        break;
+
+                    case kCompRatioId:
+                        break;
+
+                    case kCompMixId:
+                        break;
+
+                    case kBypassId:
+                        if (paramQueue->getPoint (numPoints - 1, sampleOffset, value) == kResultTrue) {
+                            bBypass = (value > 0.5f);
+                        }
+                        break;
+                }
+            }
+        }
+}
+
 tresult PLUGIN_API DiaProProcessor::process (Vst::ProcessData& data)
 {
-	//--- First : Read inputs parameter changes-----------
+	/*
+     * Read inputs parameter changes
+     */
 
     /*if (data.inputParameterChanges)
     {
@@ -84,39 +181,116 @@ tresult PLUGIN_API DiaProProcessor::process (Vst::ProcessData& data)
 			}
 		}
 	}*/
-
-	//--- Here you have to implement your processing
-    int nrSamples = data.numSamples;
-    float *in1 = data.inputs[0].channelBuffers32[0];
-    float *in2 = data.inputs[0].channelBuffers32[1];
-    float *out1 = data.outputs[0].channelBuffers32[0];
-    float *out2 = data.outputs[0].channelBuffers32[1];
-
-    --in1;
-    --in2;
-    --out1;
-    --out2;
-    while (nrSamples--) {
-        float a = *++in1;
-        float b = *++in2;
-
-        float x = 0.5f * (a + b);
-
-        *++out1 = x;
-        *++out2 = x;
+    IParameterChanges* paramChanges = data.inputParameterChanges;
+    if (paramChanges) {
+        handleParamChanges(paramChanges);
     }
+
+    /*
+     * Processing
+     */
+
+    if (data.numInputs == 0 || data.numOutputs == 0) {
+        return kResultOk;
+    }
+
+    int nrChannels = data.inputs[0].numChannels; // We assume that we have the same number of outputs
+    void** in = getChannelBuffersPointer(processSetup, data.inputs[0]);
+    void** out = getChannelBuffersPointer(processSetup, data.outputs[0]);
+
+    if (data.inputs[0].silenceFlags) {
+        size_t sampleFramesSize = getSampleFramesSizeInBytes(processSetup, data.numSamples);
+
+        data.outputs[0].silenceFlags = data.inputs[0].silenceFlags;
+
+        for (int i = 0; i < nrChannels; i++) {
+            if (in[i] != out[i]) {
+                memset(out[i], 0, sampleFramesSize);
+            }
+        }
+
+        return kResultOk;
+    }
+
+    // Normally the output is not silenced
+    data.outputs[0].silenceFlags = 0;
+
+    float fVuPPMIn[2] = { 0 };
+    float fVuPPMOut[2] = { 0 };
+
+    /*
+    * Process input VU meters
+     */
+    if (data.symbolicSampleSize == kSample32) {
+        processVuPPM<Sample32>((Sample32**)in, fVuPPMIn, nrChannels, data.numSamples);
+    } else {
+        processVuPPM<Sample64>((Sample64**)in, fVuPPMIn, nrChannels, data.numSamples);
+    }
+
+    /*
+     * We first copy the input bufs to the outputs if necessary.
+     */
+    size_t sampleFramesSize = getSampleFramesSizeInBytes(processSetup, data.numSamples);
+    for (int32 i = 0; i < nrChannels; i++) {
+        // in and out might point to the same buffer.
+        memmove(out[i], in[i], sampleFramesSize);
+    }
+
+    if (data.symbolicSampleSize == kSample32) {
+        if (!bBypass) {
+            processGain<Sample32>((Sample32**)out, nrChannels, data.numSamples, fGain);
+            processCompressor<Sample32>((Sample32**)out, nrChannels, data.numSamples);
+        }
+
+        processVuPPM<Sample32>((Sample32**)out, fVuPPMOut, nrChannels, data.numSamples);
+    } else {
+        if (bBypass) {
+            processGain<Sample64>((Sample64**)out, nrChannels, data.numSamples, fGain);
+            processCompressor<Sample64>((Sample64**)out, nrChannels, data.numSamples);
+        }
+
+        processVuPPM<Sample64>((Sample64**)out, fVuPPMOut, nrChannels, data.numSamples);
+    }
+
+    /*
+     * Write outputs parameter changes
+     */
+    IParameterChanges* outParamChanges = data.outputParameterChanges;
+    /* TODO should we check if VU values changed? */
+    if (outParamChanges) {
+        int32 index = 0;
+
+        IParamValueQueue* paramQueue0 = outParamChanges->addParameterData(kVuPPMIn0Id, index);
+        if (paramQueue0) {
+            paramQueue0->addPoint(0, fVuPPMIn[0], index);
+        }
+
+        IParamValueQueue* paramQueue1 = outParamChanges->addParameterData(kVuPPMIn1Id, index);
+        if (paramQueue1) {
+            paramQueue1->addPoint(0, fVuPPMIn[1], index);
+        }
+
+        IParamValueQueue* paramQueue2 = outParamChanges->addParameterData(kVuPPMOut0Id, index);
+        if (paramQueue2) {
+            paramQueue2->addPoint(0, fVuPPMOut[0], index);
+        }
+
+        IParamValueQueue* paramQueue3 = outParamChanges->addParameterData(kVuPPMOut1Id, index);
+        if (paramQueue3) {
+            paramQueue3->addPoint(0, fVuPPMOut[1], index);
+        }
+    }
+    memcpy(fVuPPMOutOld, fVuPPMOut, sizeof(fVuPPMOutOld));
 
 	return kResultOk;
 }
 
-//------------------------------------------------------------------------
 tresult PLUGIN_API DiaProProcessor::setupProcessing (Vst::ProcessSetup& newSetup)
 {
 	//--- called before any processing ----
 	return AudioEffect::setupProcessing (newSetup);
 }
 
-//------------------------------------------------------------------------
 tresult PLUGIN_API DiaProProcessor::canProcessSampleSize (int32 symbolicSampleSize)
 {
 	// by default kSample32 is supported
@@ -189,7 +363,6 @@ tresult PLUGIN_API DiaProProcessor::setBusArrangements (Steinberg::Vst::SpeakerA
     return kResultFalse;
 }
 
-//------------------------------------------------------------------------
 tresult PLUGIN_API DiaProProcessor::setState (IBStream* state)
 {
 	// called when we load a preset, the model has to be reloaded
@@ -198,7 +371,6 @@ tresult PLUGIN_API DiaProProcessor::setState (IBStream* state)
 	return kResultOk;
 }
 
-//------------------------------------------------------------------------
 tresult PLUGIN_API DiaProProcessor::getState (IBStream* state)
 {
 	// here we need to save the model

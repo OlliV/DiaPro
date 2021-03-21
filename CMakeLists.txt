@@ -9,6 +9,7 @@ if(NOT vst3sdk_SOURCE_DIR)
 endif()
 
 project(DiaPro)
+set(target DiaPro)
   
 set(SMTG_VSTGUI_ROOT "${vst3sdk_SOURCE_DIR}")
 set(SDK_ROOT "${vst3sdk_SOURCE_DIR}")
@@ -16,8 +17,9 @@ set(SDK_ROOT "${vst3sdk_SOURCE_DIR}")
 add_subdirectory(${vst3sdk_SOURCE_DIR} ${PROJECT_BINARY_DIR}/vst3sdk)
 smtg_enable_vst3_sdk()
 
-smtg_add_vst3plugin(DiaPro
+smtg_add_vst3plugin(${target}
     ${vst3sdk_SOURCE_DIR}/public.sdk/source/vst/vst2wrapper/vst2wrapper.sdk.cpp
+    source/mdaParameter.cpp
     source/version.h
     source/cids.h
     source/processor.h
@@ -27,44 +29,47 @@ smtg_add_vst3plugin(DiaPro
     source/entry.cpp
 )
 
-#- VSTGUI Wanted ----
-if(SMTG_ADD_VSTGUI)
-	target_sources(DiaPro
-		PRIVATE
-			resource/editor.uidesc
-	)
-    target_link_libraries(DiaPro
-        PRIVATE
-            vstgui_support
+target_sources(${target}
+    PRIVATE
+    resource/editor.uidesc
     )
-    smtg_add_vst3_resource(DiaPro "resource/editor.uidesc")
-endif()
-# -------------------
+target_link_libraries(${target}
+    PRIVATE
+    vstgui_support
+    )
 
-smtg_add_vst3_snapshot(DiaPro resource/95C62AD875FF5DFC8D89C9C51E998E0D_snapshot.png)
-smtg_add_vst3_snapshot(DiaPro resource/95C62AD875FF5DFC8D89C9C51E998E0D_snapshot_2.0x.png)
+smtg_add_vst3_resource(${target} "resource/editor.uidesc")
+smtg_add_vst3_resource(${target} "resource/background.png")
+smtg_add_vst3_resource(${target} "resource/slider_background.png")
+smtg_add_vst3_resource(${target} "resource/slider_handle.png")
+smtg_add_vst3_resource(${target} "resource/slider_handle_2.0x.png")
+smtg_add_vst3_resource(${target} "resource/vu_on.png")
+smtg_add_vst3_resource(${target} "resource/vu_off.png")
+
+smtg_add_vst3_snapshot(${target} resource/95C62AD875FF5DFC8D89C9C51E998E0D_snapshot.png)
+smtg_add_vst3_snapshot(${target} resource/95C62AD875FF5DFC8D89C9C51E998E0D_snapshot_2.0x.png)
 
 if(SMTG_MAC)
     set_target_properties(${target} PROPERTIES XCODE_ATTRIBUTE_EXPORTED_SYMBOLS_FILE macexport.exp)
 endif()
 
-target_link_libraries(DiaPro
+target_link_libraries(${target}
     PRIVATE
         sdk
 )
 
 if(SMTG_MAC)
-    smtg_set_bundle(DiaPro INFOPLIST 
+    smtg_set_bundle(${target} INFOPLIST 
         "${CMAKE_CURRENT_LIST_DIR}/resource/Info.plist" 
         PREPROCESS
     )
 elseif(SMTG_WIN)
-    target_sources(DiaPro PRIVATE 
+    target_sources(${target} PRIVATE 
         resource/win32resource.rc
     )
-    set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT DiaPro)
+    set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT ${target})
 	
-	set_target_properties(DiaPro PROPERTIES
+	set_target_properties(${target} PROPERTIES
 		VS_DEBUGGER_COMMAND
 			"$(ProgramW6432)/Steinberg/VST3PluginTestHost/VST3PluginTestHost.exe"
 		VS_DEBUGGER_COMMAND_ARGUMENTS

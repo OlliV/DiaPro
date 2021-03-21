@@ -43,12 +43,12 @@ public:
 
  	//---Interface---------
 	DEFINE_INTERFACES
-		// Here you can add more supported VST3 interfaces
-		// DEF_INTERFACE (Vst::IXXX)
 	END_DEFINE_INTERFACES (EditController)
     DELEGATE_REFCOUNT (EditController)
 
 protected:
+private:
+    void addVuMeters(void);
 };
 
 }

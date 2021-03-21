@@ -21,3 +21,18 @@ mkdir build
 cmake -DSMTG_RUN_VST_VALIDATOR=OFF -DSMTG_ADD_VSTGUI=ON -G"Xcode" -DCMAKE_BUILD_TYPE=Debug ..
 cmake --build .
 ```
+
+Editing the Interface
+---------------------
+
+```
+../../VST_SDK/VST3_SDK/build/bin/Debug/editorhost.app/Contents/MacOS/editorhost VST3/Debug/DiaPro.vst3
+```
+
+Finally *Save As* on top of `resource/editor.uidesc`.
+
+TODO
+----
+
+- Make sure turning the knobs makes smooth changes to the output
+- Setup MIDI control
