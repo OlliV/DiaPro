@@ -39,12 +39,11 @@ target_link_libraries(${target}
     )
 
 smtg_add_vst3_resource(${target} "resource/editor.uidesc")
+smtg_add_vst3_resource(${target} "resource/ST_knob_Phase_lll_50x50_128f.png")
 smtg_add_vst3_resource(${target} "resource/background.png")
-smtg_add_vst3_resource(${target} "resource/slider_background.png")
-smtg_add_vst3_resource(${target} "resource/slider_handle.png")
-smtg_add_vst3_resource(${target} "resource/slider_handle_2.0x.png")
-smtg_add_vst3_resource(${target} "resource/vu_on.png")
+smtg_add_vst3_resource(${target} "resource/switch.png")
 smtg_add_vst3_resource(${target} "resource/vu_off.png")
+smtg_add_vst3_resource(${target} "resource/vu_on.png")
 
 smtg_add_vst3_snapshot(${target} resource/95C62AD875FF5DFC8D89C9C51E998E0D_snapshot.png)
 smtg_add_vst3_snapshot(${target} resource/95C62AD875FF5DFC8D89C9C51E998E0D_snapshot_2.0x.png)
