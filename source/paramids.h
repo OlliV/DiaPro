@@ -36,11 +36,13 @@ enum {
     kVuPPMOut0Id,       ///< for the Vu value return to host (ReadOnly parameter for our UI)
     kVuPPMOut1Id,       ///< for the Vu value return to host (ReadOnly parameter for our UI)
     kBypassId,          ///< Bypass value (we will handle the bypass process) (is automatable)
-    kGainId,            ///< for the gain value (is automatable)
+    kGainId,
     kCompThreshId,
     kCompAtttimeId,
     kCompReltimeId,
     kCompRatioId,
     kCompKneeId,
+    kCompMakeupId,
     kCompMixId,
+    kCompEnable,
 };

@@ -54,7 +54,7 @@ tresult PLUGIN_API DiaProProcessor::terminate ()
 	return AudioEffect::terminate();
 }
 
-void DiaProProcessor::setCompressorParams(float thresh, float attime, float reltime, float ratio, float mix)
+void DiaProProcessor::setCompressorParams(float thresh, float attime, float reltime, float ratio, float makeup, float mix)
 {
     float sampleRate = (float)this->processSetup.sampleRate;
 
@@ -62,6 +62,7 @@ void DiaProProcessor::setCompressorParams(float thresh, float attime, float relt
     comp.attime = attime;
     comp.reltime = reltime;
     comp.cratio = ratio;
+    comp.makeup = makeup;
     comp.mix = 1; // mix original and compressed 0..1
     comp.atcoef = exp(-1 / (comp.attime * sampleRate));
     comp.relcoef = exp(-1 / (comp.reltime * sampleRate));
@@ -79,11 +80,11 @@ tresult PLUGIN_API DiaProProcessor::setActive (TBool state)
          * Init comp
          */
         comp.softknee = false;
-        setCompressorParams(0, 0.010f, 0.100f, 0, 1);
+        setCompressorParams(0, 0.010f, 0.100f, 0, 1.0f, 1.0f);
         comp.rmscoef = 0;
-        comp.ratatcoef = exp(-1 / (0.00001f * sampleRate));
-        comp.ratrelcoef = exp(-1 / (0.5f * sampleRate));
-        comp.gr_meter_decay = exp(1 / (1 * sampleRate));
+        comp.ratatcoef = exp(-1.0f / (0.00001f * sampleRate));
+        comp.ratrelcoef = exp(-1.0f / (0.5f * sampleRate));
+        comp.gr_meter_decay = exp(1.0f / (1.0f * sampleRate));
 
         comp.runave[0] = 0;
         comp.runave[1] = 0;
@@ -129,14 +130,14 @@ void DiaProProcessor::handleParamChanges(IParameterChanges* paramChanges)
                     case kCompThreshId:
                         if (paramQueue->getPoint(numPoints - 1, sampleOffset, value) == kResultTrue) {
                             float thresh = norm2db((float)value, COMP_THRESH_MIN, 0);
-                            setCompressorParams(thresh, comp.attime, comp.reltime, comp.cratio, comp.mix);
+                            setCompressorParams(thresh, comp.attime, comp.reltime, comp.cratio, comp.makeup, comp.mix);
                         }
                         break;
 
                     case kCompAtttimeId:
                         if (paramQueue->getPoint(numPoints - 1, sampleOffset, value) == kResultTrue) {
                             float attime = 0; // TODO
-                            //setCompressorParams(comp.thresh, attime, comp.reltime, comp.cratio, comp.mix);
+                            //setCompressorParams(comp.thresh, attime, comp.reltime, comp.cratio, comp.makeup, comp.mix);
                         }
                         break;
 
@@ -238,15 +239,19 @@ tresult PLUGIN_API DiaProProcessor::process (Vst::ProcessData& data)
 
     if (data.symbolicSampleSize == kSample32) {
         if (!bBypass) {
+            if (comp.enable) {
+                processCompressor<Sample32>((Sample32**)out, nrChannels, data.numSamples);
+            }
             processGain<Sample32>((Sample32**)out, nrChannels, data.numSamples, fGain);
-            processCompressor<Sample32>((Sample32**)out, nrChannels, data.numSamples);
         }
 
         processVuPPM<Sample32>((Sample32**)out, fVuPPMOut, nrChannels, data.numSamples);
     } else {
         if (bBypass) {
+            if (comp.enable) {
+                processCompressor<Sample64>((Sample64**)out, nrChannels, data.numSamples);
+            }
             processGain<Sample64>((Sample64**)out, nrChannels, data.numSamples, fGain);
-            processCompressor<Sample64>((Sample64**)out, nrChannels, data.numSamples);
         }
 
         processVuPPM<Sample64>((Sample64**)out, fVuPPMOut, nrChannels, data.numSamples);
@@ -365,8 +370,42 @@ tresult PLUGIN_API DiaProProcessor::setBusArrangements (Steinberg::Vst::SpeakerA
 
 tresult PLUGIN_API DiaProProcessor::setState (IBStream* state)
 {
-	// called when we load a preset, the model has to be reloaded
-	IBStreamer streamer (state, kLittleEndian);
+    // called when we load a preset or project, the model has to be reloaded
+    if (!state) {
+        kResultFalse;
+    }
+
+	IBStreamer streamer(state, kLittleEndian);
+
+    int32 savedBypass = 0;
+    float savedGain = 0;
+    float savedCompThresh = 0;
+    float savedComAtttime;
+    float savedCompReltime = 0;
+    float savedCompRatio = 0;
+    float savedCompKnee = 0;
+    float savedCompMakeup = 0;
+    float savedCompMix = 0;
+    int32 savedCompEnable = 0;
+
+    if (!streamer.readInt32(savedBypass) ||
+        !streamer.readFloat(savedGain) ||
+        !streamer.readFloat(savedCompThresh) ||
+        !streamer.readFloat(savedComAtttime) ||
+        !streamer.readFloat(savedCompReltime) ||
+        !streamer.readFloat(savedCompRatio) ||
+        !streamer.readFloat(savedCompKnee) ||
+        !streamer.readFloat(savedCompMakeup) ||
+        !streamer.readFloat(savedCompMix) ||
+        !streamer.readInt32(savedCompEnable)
+        ) {
+            return kResultFalse;
+    }
+
+    bBypass = savedBypass > 0;
+    fGain = savedGain;
+    setCompressorParams(savedCompThresh, savedComAtttime, savedCompReltime, savedCompRatio, savedCompMakeup, savedCompMakeup);
+    comp.enable = savedCompEnable > 0;
 
 	return kResultOk;
 }

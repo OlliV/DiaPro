@@ -1,7 +1,7 @@
 #pragma once
 
 #include <algorithm>
-#include_next "paramids.h"
+#include "paramids.h"
 
 namespace MyVst {
 
@@ -97,7 +97,7 @@ void DiaProProcessor::processCompressor (SampleType** inOut, int nrChannels, int
                 }
             }
 
-            *pSample++ = grv * comp.mix + s * (1 - comp.mix);
+            *pSample++ = grv * comp.makeup * comp.mix + s * (1 - comp.mix);
         }
     }
 }

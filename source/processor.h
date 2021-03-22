@@ -65,7 +65,7 @@ protected:
     template <typename SampleType>
     void processVuPPM (SampleType** in, float *vuPPM, int nrChannels, int nrSamples);
 
-    void setCompressorParams(float thresh, float attime, float reltime, float ratio, float mix);
+    void setCompressorParams(float thresh, float attime, float reltime, float ratio, float makeup, float mix);
     void handleParamChanges(Steinberg::Vst::IParameterChanges* paramChanges);
 
     // Gain
@@ -73,12 +73,15 @@ protected:
 
     // Compressor
     struct {
+        bool enable;
+
         // params
         bool softknee; // TODO Make knee tunable
         float thresh;
         float attime; // attack time
         float reltime; // release time
         float cratio;
+        float makeup;
         float mix; // mix original and compressed 0..1
         float rmscoef;
         float atcoef;

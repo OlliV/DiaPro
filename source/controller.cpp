@@ -97,7 +97,6 @@ tresult PLUGIN_API DiaProController::initialize (FUnknown* context)
     parameters.addParameter(param);
     param->setUnitID(1);
 
-
     // Comp ratio
     param = new Steinberg::Vst::mda::ScaledParameter(USTRING("Ratio"), USTRING(":1"), 0, 30, ParameterInfo::kCanAutomate, kCompRatioId);
     parameters.addParameter(param);
@@ -115,9 +114,25 @@ tresult PLUGIN_API DiaProController::initialize (FUnknown* context)
 	param = parameters.addParameter(USTRING("Release"), USTRING(""), 0, 1, ParameterInfo::kCanAutomate, kCompReltimeId);
 	param->setUnitID (1);
 
+    // Comp gain parameter
+    param = new GainParameter("Makeup Gain", ParameterInfo::kCanAutomate, kCompMakeupId, GAIN_MIN, GAIN_MAX);
+    parameters.addParameter(param);
+    param->setUnitID(1);
+
     // Comp mix
-	param = parameters.addParameter(USTRING("Mix"), USTRING(""), 0, 1, ParameterInfo::kCanAutomate, kCompMixId);
+	param = new Steinberg::Vst::mda::ScaledParameter(USTRING("Mix"), USTRING(""), 0, 1, ParameterInfo::kCanAutomate, kCompMixId);
+    parameters.addParameter(param);
 	param->setUnitID (1);
+
+    // Comp enable
+    parameters.addParameter(STR16("Enable Compressor"), // title
+                            STR16("On/Off"), // units
+                            1, // stepCount => 1 means toggle
+                            1, // defaultNormalizedValue
+                            Vst::ParameterInfo::kCanAutomate, // flags
+                            kCompEnable, // tag
+                            0, // unitID => not using units
+                            STR16 ("Enable")); // shortTitle
 
     // Gain parameter
     param = new GainParameter("Gain", ParameterInfo::kCanAutomate, kGainId, GAIN_MIN, GAIN_MAX);
@@ -139,7 +154,6 @@ void DiaProController::addVuMeters(void)
     parameters.addParameter(STR16("VuPPMOut1"), nullptr, stepCount, defaultVal, flags, kVuPPMOut1Id);
 }
 
-//------------------------------------------------------------------------
 tresult PLUGIN_API DiaProController::terminate ()
 {
 	// Here the Plug-in will be de-instanciated, last possibility to remove some memory!
@@ -148,30 +162,50 @@ tresult PLUGIN_API DiaProController::terminate ()
 	return EditControllerEx1::terminate ();
 }
 
-//------------------------------------------------------------------------
 tresult PLUGIN_API DiaProController::setComponentState (IBStream* state)
 {
     if (!state)
         return kResultFalse;
 
     IBStreamer streamer (state, kLittleEndian);
-    float savedGain = 0.f;
-    if (streamer.readFloat (savedGain) == false)
-        return kResultFalse;
-    setParamNormalized (kGainId, savedGain);
+    int32 savedBypass;
+    float savedGain;
+    float savedCompThresh;
+    float savedCompAtttime;
+    float savedCompReltime;
+    float savedCompRatio;
+    float savedCompKnee;
+    float savedCompMakeup;
+    float savedCompMix;
+    int32 savedCompEnable;
 
-    // jump the GainReduction
-    streamer.seek (sizeof (float), kSeekCurrent);
-
-    int32 bypassState = 0;
-    if (streamer.readInt32 (bypassState) == false)
+    if (!streamer.readInt32(savedBypass) ||
+        !streamer.readFloat(savedGain) ||
+        !streamer.readFloat(savedCompThresh) ||
+        !streamer.readFloat(savedCompAtttime) ||
+        !streamer.readFloat(savedCompReltime) ||
+        !streamer.readFloat(savedCompRatio) ||
+        !streamer.readFloat(savedCompKnee) ||
+        !streamer.readFloat(savedCompMakeup) ||
+        !streamer.readFloat(savedCompMix) ||
+        !streamer.readInt32(savedCompEnable)) {
         return kResultFalse;
-    setParamNormalized (kBypassId, bypassState ? 1 : 0);
+    }
+
+    setParamNormalized(kBypassId, savedBypass ? 1 : 0);
+    setParamNormalized(kGainId, savedGain);
+    setParamNormalized(kCompThreshId, savedCompThresh);
+    setParamNormalized(kCompAtttimeId, savedCompAtttime);
+    setParamNormalized(kCompReltimeId, savedCompReltime);
+    setParamNormalized(kCompRatioId, savedCompRatio);
+    setParamNormalized(kCompKneeId, savedCompKnee);
+    setParamNormalized(kCompMakeupId, savedCompMakeup);
+    setParamNormalized(kCompMixId, savedCompMix);
+    setParamNormalized(kCompEnable, savedCompEnable ? 1 : 0);
 
 	return kResultOk;
 }
 
-//------------------------------------------------------------------------
 tresult PLUGIN_API DiaProController::setState (IBStream* state)
 {
 	// Here you get the state of the controller
@@ -179,7 +213,6 @@ tresult PLUGIN_API DiaProController::setState (IBStream* state)
 	return kResultTrue;
 }
 
-//------------------------------------------------------------------------
 tresult PLUGIN_API DiaProController::getState (IBStream* state)
 {
 	// Here you are asked to deliver the state of the controller (if needed)
@@ -188,7 +221,6 @@ tresult PLUGIN_API DiaProController::getState (IBStream* state)
 	return kResultTrue;
 }
 
-//------------------------------------------------------------------------
 IPlugView* PLUGIN_API DiaProController::createView (FIDString name)
 {
 	// Here the Host wants to open your editor (if you have one)
@@ -201,7 +233,6 @@ IPlugView* PLUGIN_API DiaProController::createView (FIDString name)
 	return nullptr;
 }
 
-//------------------------------------------------------------------------
 tresult PLUGIN_API DiaProController::setParamNormalized (Vst::ParamID tag, Vst::ParamValue value)
 {
 	// called by host to update your parameters
@@ -209,7 +240,6 @@ tresult PLUGIN_API DiaProController::setParamNormalized (Vst::ParamID tag, Vst::
 	return result;
 }
 
-//------------------------------------------------------------------------
 tresult PLUGIN_API DiaProController::getParamStringByValue (Vst::ParamID tag, Vst::ParamValue valueNormalized, Vst::String128 string)
 {
 	// called by host to get a string for given normalized value of a specific parameter
@@ -217,7 +247,6 @@ tresult PLUGIN_API DiaProController::getParamStringByValue (Vst::ParamID tag, Vs
 	return EditControllerEx1::getParamStringByValue (tag, valueNormalized, string);
 }
 
-//------------------------------------------------------------------------
 tresult PLUGIN_API DiaProController::getParamValueByString (Vst::ParamID tag, Vst::TChar* string, Vst::ParamValue& valueNormalized)
 {
 	// called by host to get a normalized value from a string representation of a specific parameter
