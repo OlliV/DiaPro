@@ -29,9 +29,9 @@ namespace mda {
 class BaseParameter : public Parameter
 {
 public:
-	BaseParameter	(	const TChar* title, 
-						const TChar* units, 
-						int32 stepCount, 
+	BaseParameter	(	const TChar* title,
+						const TChar* units,
+						int32 stepCount,
 						ParamValue defaultValueNormalized,
 						int32 flags,
 						int32 tag,
@@ -46,9 +46,9 @@ public:
 class IndexedParameter : public BaseParameter
 {
 public:
-	IndexedParameter (	const TChar* title, 
-						const TChar* units, 
-						int32 stepCount, 
+	IndexedParameter (	const TChar* title,
+						const TChar* units,
+						int32 stepCount,
 						ParamValue defaultValueNormalized,
 						int32 flags,
 						int32 tag,
@@ -70,9 +70,9 @@ protected:
 class ScaledParameter : public BaseParameter
 {
 public:
-	ScaledParameter (	const TChar* title, 
-						const TChar* units, 
-						int32 stepCount, 
+	ScaledParameter (	const TChar* title,
+						const TChar* units,
+						int32 stepCount,
 						ParamValue defaultValueNormalized,
 						int32 flags,
 						int32 tag,

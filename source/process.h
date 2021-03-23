@@ -56,7 +56,7 @@ void DiaProProcessor::processCompressor (SampleType** inOut, int nrChannels, int
     for (int ch = 0; ch < nrChannels; ch++) {
         SampleType *pSample = inOut[ch];
         int i = nrSamples;
-        SampleType prevAs = 0;
+        SampleType prevAs = 0.0f;
 
         while (i--) {
             SampleType s = *pSample;
@@ -65,13 +65,13 @@ void DiaProProcessor::processCompressor (SampleType** inOut, int nrChannels, int
             prevAs = as;
 
             comp.runave[ch] = (amax * amax) + comp.rmscoef * (comp.runave[ch] - amax);
-            SampleType det = sqrt(fmax(0, comp.runave[ch]));
+            SampleType det = sqrt(fmax(0.0f, comp.runave[ch]));
 
             comp.overdb[ch] = 2.08136898f * log(det / comp.cthreshv) * LOG2DB;
-            comp.overdb[ch] = fmax(0, comp.overdb[ch]);
+            comp.overdb[ch] = fmax(0.0f, comp.overdb[ch]);
 
-            if (comp.overdb[ch] - comp.rundb[ch] > 5) {
-                comp.averatio[ch] = 4;
+            if (comp.overdb[ch] - comp.rundb[ch] > 5.0f) {
+                comp.averatio[ch] = 4.0f;
             }
 
             if (comp.overdb[ch] > comp.rundb[ch]) {
@@ -82,7 +82,15 @@ void DiaProProcessor::processCompressor (SampleType** inOut, int nrChannels, int
                 comp.runratio[ch] = comp.averatio[ch] + comp.ratrelcoef * (comp.runratio[ch] - comp.averatio[ch]);
             }
 
-            SampleType gr = -comp.overdb[ch] * (comp.cratio - 1) / comp.cratio;
+			comp.overdb[ch] = comp.rundb[ch];
+			comp.averatio[ch] = comp.runratio[ch];
+			if (comp.ratio == 1.0f) {
+				comp.cratio[ch] = 12.0f + comp.averatio[ch];
+			} else {
+				comp.cratio[ch] = comp.ratio * (COMP_RATIO_MAX - COMP_RATIO_MIN) + COMP_RATIO_MIN;
+			}
+
+            SampleType gr = -comp.overdb[ch] * (comp.cratio[ch] - 1.0f) / comp.cratio[ch];
             SampleType grv = exp(gr * DB2LOG);
 
             comp.runmax[ch] = comp.maxover[ch] + comp.relcoef * (comp.runmax[ch] - comp.maxover[ch]);
@@ -92,12 +100,12 @@ void DiaProProcessor::processCompressor (SampleType** inOut, int nrChannels, int
                 comp.gr_meter[ch] = grv;
             } else {
                 comp.gr_meter[ch] *= comp.gr_meter_decay;
-                if (comp.gr_meter[ch] > 1) {
-                    comp.gr_meter[ch] = 1;
+                if (comp.gr_meter[ch] > 1.0f) {
+                    comp.gr_meter[ch] = 1.0f;
                 }
             }
 
-            *pSample++ = grv * comp.makeup * comp.mix + s * (1 - comp.mix);
+            *pSample++ = s * grv * comp.makeup * comp.mix + s * (1.0f - comp.mix);
         }
     }
 }
@@ -108,16 +116,22 @@ void DiaProProcessor::processVuPPM (SampleType** in, float *vuPPM, int nrChannel
     nrChannels = std::min(nrChannels, 2);
 
 	for (int ch = 0; ch < nrChannels; ch++) {
+        SampleType newPeak = 0;
 		SampleType *ptrIn = (SampleType*)in[ch];
         int i = nrSamples;
 
 		while (i--) {
 		    SampleType tmp = (*ptrIn++);
 
-			if (tmp > vuPPM[ch]) {
-				vuPPM[ch] = tmp;
-			}
+			if (tmp > newPeak) {
+				newPeak = tmp;
+            }
 		}
+        if (newPeak > vuPPM[ch]) {
+            vuPPM[ch] = newPeak;
+        } else {
+            vuPPM[ch] *= 0.95f; // TODO Figure out a real decay param
+        }
 	}
 }
 

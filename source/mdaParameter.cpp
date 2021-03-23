@@ -137,9 +137,9 @@ void IndexedParameter::setIndexString (int32 index, const String128 str)
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-ScaledParameter::ScaledParameter (	const TChar* title, 
-									const TChar* units, 
-									int32 stepCount, 
+ScaledParameter::ScaledParameter (	const TChar* title,
+									const TChar* units,
+									int32 stepCount,
 									ParamValue defaultValueNormalized,
 									int32 flags,
 									int32 tag,

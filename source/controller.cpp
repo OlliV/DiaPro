@@ -33,21 +33,21 @@ private:
     float gain_max;
 };
 
-GainParameter::GainParameter (const char *name, int32 flags, int32 id, float min, float max)
+GainParameter::GainParameter (const char *name, int32 flags, int32 id, float min_db, float max_db)
 {
     Steinberg::UString (info.title, USTRINGSIZE (info.title)).assign (USTRING (name));
     Steinberg::UString (info.units, USTRINGSIZE (info.units)).assign (USTRING ("dB"));
 
-    gain_min = min;
-    gain_max = max;
+    gain_min = min_db;
+    gain_max = max_db;
 
     info.flags = flags;
     info.id = id;
     info.stepCount = 0;
-    info.defaultNormalizedValue = 0.5f;
+    info.defaultNormalizedValue = db2norm(0.0f, min_db, max_db);
     info.unitId = kRootUnitId;
 
-    setNormalized(0.5f);
+    setNormalized(info.defaultNormalizedValue);
 }
 
 void GainParameter::toString (ParamValue normValue, String128 string) const
@@ -93,36 +93,45 @@ tresult PLUGIN_API DiaProController::initialize (FUnknown* context)
     Parameter *param;
 
     // Comp thresh
-    param = new GainParameter("Threshold", ParameterInfo::kCanAutomate, kCompThreshId, COMP_THRESH_MIN, 0);
+    param = new GainParameter("Threshold", ParameterInfo::kCanAutomate, kCompThreshId, COMP_THRESH_MIN, COMP_THRESH_MAX);
+    param->setNormalized(COMP_THRESH_DEFAULT_N);
     parameters.addParameter(param);
     param->setUnitID(1);
 
     // Comp ratio
-    param = new Steinberg::Vst::mda::ScaledParameter(USTRING("Ratio"), USTRING(":1"), 0, 30, ParameterInfo::kCanAutomate, kCompRatioId);
+    param = new Steinberg::Vst::mda::ScaledParameter(USTRING("Ratio"), USTRING(":1"), 0, COMP_RATIO_DEFAULT_N, ParameterInfo::kCanAutomate, kCompRatioId, COMP_RATIO_MIN, COMP_RATIO_MAX);
+    param->setNormalized(COMP_RATIO_DEFAULT_N);
     parameters.addParameter(param);
-    param->setUnitID (1);
+    param->setUnitID(1);
 
     // Comp knee
-	param = parameters.addParameter(USTRING("Knee"), USTRING(""), 0, 1, ParameterInfo::kCanAutomate, kCompKneeId);
-	param->setUnitID (1);
+	param = new Steinberg::Vst::mda::ScaledParameter(USTRING("Knee"), USTRING(""), 0, COMP_KNEE_DEFAULT_N, ParameterInfo::kCanAutomate, kCompKneeId, COMP_KNEE_MIN, COMP_KNEE_MAX);
+    param->setNormalized(COMP_KNEE_DEFAULT_N);
+    parameters.addParameter(param);
+	param->setUnitID(1);
 
     // Comp attack
-	param = parameters.addParameter(USTRING("Attack"), USTRING(""), 0, 1, ParameterInfo::kCanAutomate, kCompAtttimeId);
-	param->setUnitID (1);
+	param = new Steinberg::Vst::mda::ScaledParameter(USTRING("Attack"), USTRING("usec"), 0, COMP_ATTIME_DEFAULT_N, ParameterInfo::kCanAutomate, kCompAttimeId, COMP_ATTIME_MIN, COMP_ATTIME_MAX);
+    param->setNormalized(COMP_ATTIME_DEFAULT_N);
+    parameters.addParameter(param);
+	param->setUnitID(1);
 
     // Comp release
-	param = parameters.addParameter(USTRING("Release"), USTRING(""), 0, 1, ParameterInfo::kCanAutomate, kCompReltimeId);
-	param->setUnitID (1);
+	param = new Steinberg::Vst::mda::ScaledParameter(USTRING("Release"), USTRING("msec"), 0, COMP_RELTIME_DEFAULT_N, ParameterInfo::kCanAutomate, kCompReltimeId, COMP_RELTIME_MIN, COMP_RELTIME_MAX);
+    param->setNormalized(COMP_RELTIME_DEFAULT_N);
+    parameters.addParameter(param);
+	param->setUnitID(1);
 
     // Comp gain parameter
-    param = new GainParameter("Makeup Gain", ParameterInfo::kCanAutomate, kCompMakeupId, GAIN_MIN, GAIN_MAX);
+    param = new GainParameter("Makeup Gain", ParameterInfo::kCanAutomate, kCompMakeupId, COMP_MAKEUP_MIN, COMP_MAKEUP_MAX);
     parameters.addParameter(param);
     param->setUnitID(1);
 
     // Comp mix
-	param = new Steinberg::Vst::mda::ScaledParameter(USTRING("Mix"), USTRING(""), 0, 1, ParameterInfo::kCanAutomate, kCompMixId);
+	param = new Steinberg::Vst::mda::ScaledParameter(USTRING("Mix"), USTRING(":1"), 0.0f, 1.0f, ParameterInfo::kCanAutomate, kCompMixId);
+    param->setNormalized(COMP_MIX_DEFAULT_N);
     parameters.addParameter(param);
-	param->setUnitID (1);
+	param->setUnitID(1);
 
     // Comp enable
     parameters.addParameter(STR16("Enable Compressor"), // title
@@ -134,7 +143,7 @@ tresult PLUGIN_API DiaProController::initialize (FUnknown* context)
                             0, // unitID => not using units
                             STR16 ("Enable")); // shortTitle
 
-    // Gain parameter
+    // Output Gain parameter
     param = new GainParameter("Gain", ParameterInfo::kCanAutomate, kGainId, GAIN_MIN, GAIN_MAX);
     parameters.addParameter(param);
     param->setUnitID(2);
@@ -171,7 +180,7 @@ tresult PLUGIN_API DiaProController::setComponentState (IBStream* state)
     int32 savedBypass;
     float savedGain;
     float savedCompThresh;
-    float savedCompAtttime;
+    float savedCompAttime;
     float savedCompReltime;
     float savedCompRatio;
     float savedCompKnee;
@@ -182,7 +191,7 @@ tresult PLUGIN_API DiaProController::setComponentState (IBStream* state)
     if (!streamer.readInt32(savedBypass) ||
         !streamer.readFloat(savedGain) ||
         !streamer.readFloat(savedCompThresh) ||
-        !streamer.readFloat(savedCompAtttime) ||
+        !streamer.readFloat(savedCompAttime) ||
         !streamer.readFloat(savedCompReltime) ||
         !streamer.readFloat(savedCompRatio) ||
         !streamer.readFloat(savedCompKnee) ||
@@ -195,7 +204,7 @@ tresult PLUGIN_API DiaProController::setComponentState (IBStream* state)
     setParamNormalized(kBypassId, savedBypass ? 1 : 0);
     setParamNormalized(kGainId, savedGain);
     setParamNormalized(kCompThreshId, savedCompThresh);
-    setParamNormalized(kCompAtttimeId, savedCompAtttime);
+    setParamNormalized(kCompAttimeId, savedCompAttime);
     setParamNormalized(kCompReltimeId, savedCompReltime);
     setParamNormalized(kCompRatioId, savedCompRatio);
     setParamNormalized(kCompKneeId, savedCompKnee);

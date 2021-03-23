@@ -54,19 +54,20 @@ tresult PLUGIN_API DiaProProcessor::terminate ()
 	return AudioEffect::terminate();
 }
 
-void DiaProProcessor::setCompressorParams(float thresh, float attime, float reltime, float ratio, float makeup, float mix)
+void DiaProProcessor::setCompressorParams(float thresh, float attime, float reltime, float ratio, float knee, float makeup, float mix)
 {
     float sampleRate = (float)this->processSetup.sampleRate;
 
     comp.thresh = thresh;
     comp.attime = attime;
     comp.reltime = reltime;
-    comp.cratio = ratio;
+    comp.ratio = ratio;
     comp.makeup = makeup;
-    comp.mix = 1; // mix original and compressed 0..1
+    comp.mix = mix; // mix original and compressed 0..1
     comp.atcoef = exp(-1 / (comp.attime * sampleRate));
     comp.relcoef = exp(-1 / (comp.reltime * sampleRate));
-    float cthresh = (comp.softknee) ? (comp.thresh - 3) : comp.thresh;
+    comp.knee = knee;
+    float cthresh = comp.thresh - 3 * comp.knee;
     comp.cthreshv = exp(cthresh * DB2LOG);
 }
 
@@ -79,8 +80,7 @@ tresult PLUGIN_API DiaProProcessor::setActive (TBool state)
         /*
          * Init comp
          */
-        comp.softknee = false;
-        setCompressorParams(0, 0.010f, 0.100f, 0, 1.0f, 1.0f);
+        setCompressorParams(comp.thresh, comp.attime, comp.reltime, comp.ratio, comp.knee, comp.makeup, comp.mix);
         comp.rmscoef = 0;
         comp.ratatcoef = exp(-1.0f / (0.00001f * sampleRate));
         comp.ratrelcoef = exp(-1.0f / (0.5f * sampleRate));
@@ -98,11 +98,19 @@ tresult PLUGIN_API DiaProProcessor::setActive (TBool state)
         comp.averatio[1] = 0;
         comp.runratio[0] = 0;
         comp.runratio[1] = 0;
+        comp.cratio[0] = 0;
+        comp.cratio[1] = 0;
         comp.maxover[0] = 0;
         comp.maxover[1] = 0;
         comp.gr_meter[0] = 1.0f;
         comp.gr_meter[1] = 1.0f;
     }
+
+    /*
+     * Reset VU
+     */
+    memset(fVuPPMInOld, 0, sizeof(fVuPPMInOld));
+    memset(fVuPPMOutOld, 0, sizeof(fVuPPMOutOld));
 
 	return AudioEffect::setActive (state);
 }
@@ -130,29 +138,60 @@ void DiaProProcessor::handleParamChanges(IParameterChanges* paramChanges)
                     case kCompThreshId:
                         if (paramQueue->getPoint(numPoints - 1, sampleOffset, value) == kResultTrue) {
                             float thresh = norm2db((float)value, COMP_THRESH_MIN, 0);
-                            setCompressorParams(thresh, comp.attime, comp.reltime, comp.cratio, comp.makeup, comp.mix);
+                            setCompressorParams(thresh, comp.attime, comp.reltime, comp.ratio, comp.knee, comp.makeup, comp.mix);
                         }
                         break;
 
-                    case kCompAtttimeId:
+                    case kCompAttimeId:
                         if (paramQueue->getPoint(numPoints - 1, sampleOffset, value) == kResultTrue) {
-                            float attime = 0; // TODO
-                            //setCompressorParams(comp.thresh, attime, comp.reltime, comp.cratio, comp.makeup, comp.mix);
+                            float attime = value;
+                            setCompressorParams(comp.thresh, attime, comp.reltime, comp.ratio, comp.knee, comp.makeup, comp.mix);
                         }
                         break;
 
                     case kCompReltimeId:
+                        if (paramQueue->getPoint(numPoints - 1, sampleOffset, value) == kResultTrue) {
+                            float reltime = value;
+                            setCompressorParams(comp.thresh, comp.attime, reltime, comp.ratio, comp.knee, comp.makeup, comp.mix);
+                        }
                         break;
 
                     case kCompRatioId:
+                        if (paramQueue->getPoint(numPoints - 1, sampleOffset, value) == kResultTrue) {
+                            float ratio = value;
+                            setCompressorParams(comp.thresh, comp.attime, comp.reltime, ratio, comp.knee, comp.makeup, comp.mix);
+                        }
+                        break;
+
+                    case kCompKneeId:
+                        if (paramQueue->getPoint(numPoints - 1, sampleOffset, value) == kResultTrue) {
+                            float knee = value;
+                            setCompressorParams(comp.thresh, comp.attime, comp.reltime, comp.ratio, knee, comp.makeup, comp.mix);
+                        }
+                        break;
+
+                    case kCompMakeupId:
+                        if (paramQueue->getPoint(numPoints - 1, sampleOffset, value) == kResultTrue) {
+                            float makeup = norm2factor((float)value, GAIN_MIN, GAIN_MAX);
+                            setCompressorParams(comp.thresh, comp.attime, comp.reltime, comp.ratio, comp.knee, makeup, comp.mix);
+                        }
                         break;
 
                     case kCompMixId:
+                        if (paramQueue->getPoint(numPoints - 1, sampleOffset, value) == kResultTrue) {
+                            float mix = value;
+                            setCompressorParams(comp.thresh, comp.attime, comp.reltime, comp.ratio, comp.knee, comp.makeup, mix);
+                        }
                         break;
+
+                    case kCompEnable:
+                        if (paramQueue->getPoint(numPoints - 1, sampleOffset, value) == kResultTrue) {
+                            comp.enable = value > 0.5f;
+                        }
 
                     case kBypassId:
                         if (paramQueue->getPoint (numPoints - 1, sampleOffset, value) == kResultTrue) {
-                            bBypass = (value > 0.5f);
+                            bBypass = value > 0.5f;
                         }
                         break;
                 }
@@ -216,8 +255,11 @@ tresult PLUGIN_API DiaProProcessor::process (Vst::ProcessData& data)
     // Normally the output is not silenced
     data.outputs[0].silenceFlags = 0;
 
-    float fVuPPMIn[2] = { 0 };
-    float fVuPPMOut[2] = { 0 };
+    float fVuPPMIn[2];
+    float fVuPPMOut[2];
+
+    memcpy(fVuPPMIn, fVuPPMInOld, sizeof(fVuPPMIn));
+    memcpy(fVuPPMOut, fVuPPMOutOld, sizeof(fVuPPMOut));
 
     /*
     * Process input VU meters
@@ -285,6 +327,7 @@ tresult PLUGIN_API DiaProProcessor::process (Vst::ProcessData& data)
             paramQueue3->addPoint(0, fVuPPMOut[1], index);
         }
     }
+    memcpy(fVuPPMInOld, fVuPPMIn, sizeof(fVuPPMInOld));
     memcpy(fVuPPMOutOld, fVuPPMOut, sizeof(fVuPPMOutOld));
 
 	return kResultOk;
@@ -404,8 +447,8 @@ tresult PLUGIN_API DiaProProcessor::setState (IBStream* state)
 
     bBypass = savedBypass > 0;
     fGain = savedGain;
-    setCompressorParams(savedCompThresh, savedComAtttime, savedCompReltime, savedCompRatio, savedCompMakeup, savedCompMakeup);
-    comp.enable = savedCompEnable > 0;
+    setCompressorParams(savedCompThresh, savedComAtttime, savedCompReltime, savedCompRatio, savedCompKnee, savedCompMakeup, savedCompMakeup);
+    comp.enable = savedCompEnable > 0.5f;
 
 	return kResultOk;
 }
@@ -414,6 +457,8 @@ tresult PLUGIN_API DiaProProcessor::getState (IBStream* state)
 {
 	// here we need to save the model
 	IBStreamer streamer (state, kLittleEndian);
+
+    // TODO write out the state
 
 	return kResultOk;
 }
