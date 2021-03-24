@@ -82,7 +82,7 @@ void Compressor<SampleType>::updateParams(float sampleRate)
     cooked.ratio = PLAIN(ratio, COMP_RATIO_MIN, COMP_RATIO_MAX);
     cooked.cthresh = norm2db(thresh, COMP_THRESH_MIN, COMP_THRESH_MAX) - 3.0f * knee;
     cooked.cthreshv = exp(cooked.cthresh * DB2LOG);
-    cooked.cmakeup = norm2db(makeup, COMP_MAKEUP_MIN, COMP_MAKEUP_MAX);
+    cooked.cmakeup = normdb2factor(makeup, COMP_MAKEUP_MIN, COMP_MAKEUP_MAX);
 
     cooked.rmscoef = 0;
     cooked.ratatcoef = exp(-1.0f / (0.00001f * sampleRate));

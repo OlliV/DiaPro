@@ -32,7 +32,7 @@
 #define COMP_RELTIME_DEFAULT_N  NORM(50.0f, COMP_RELTIME_MIN, COMP_RELTIME_MAX)
 #define COMP_MAKEUP_MIN        -12.0f
 #define COMP_MAKEUP_MAX         20.0f
-#define COMP_MAKEUP_DEFAULT_N   0.68f
+#define COMP_MAKEUP_DEFAULT_N   0.375f
 #define COMP_MIX_DEFAULT_N      1.0f
 
 static inline float db2norm(float db, float min, float max)
