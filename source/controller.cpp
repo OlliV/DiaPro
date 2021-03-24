@@ -82,6 +82,29 @@ tresult PLUGIN_API DiaProController::initialize (FUnknown* context)
 		return result;
 	}
 
+    //--- Create Units-------------
+    UnitInfo unitInfo;
+    Unit* unit;
+
+    // create root only if you want to use the programListId
+    //unitInfo.id = kRootUnitId;    // always for Root Unit
+    //unitInfo.parentUnitId = kNoParentUnitId;    // always for Root Unit
+    //Steinberg::UString(unitInfo.name, USTRINGSIZE(unitInfo.name)).assign(USTRING("Root"));
+    //unitInfo.programListId = kNoProgramListId;
+    //addUnit(new Unit(unitInfo));
+
+    // compressor
+    unitInfo.id = 1;
+    unitInfo.parentUnitId = kRootUnitId; // attached to the root unit
+    Steinberg::UString(unitInfo.name, USTRINGSIZE(unitInfo.name)).assign(USTRING("Compressor"));
+    addUnit(new Unit(unitInfo));
+
+    // output gain
+    unitInfo.id = 2;
+    unitInfo.parentUnitId = kRootUnitId; // attached to the root unit
+    Steinberg::UString(unitInfo.name, USTRINGSIZE(unitInfo.name)).assign(USTRING("Output"));
+    addUnit(new Unit(unitInfo));
+
 	// Here you could register some parameters
     addVuMeters();
 

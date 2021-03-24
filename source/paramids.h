@@ -7,9 +7,13 @@
 
 #define GAIN_MIN               -20.0f
 #define GAIN_MAX                20.0f
+#define GAIN_DEFAULT_N          0.5f
 
 #define NORM(v, min_v, max_v) \
     ((v) - (min_v)) / ((max_v) - (min_v))
+
+#define PLAIN(v, min_v, max_v) \
+    ((v) * ((max_v) - (min_v)) + (min_v))
 
 #define COMP_THRESH_MIN        -60.0f
 #define COMP_THRESH_MAX         0.0f
@@ -28,7 +32,7 @@
 #define COMP_RELTIME_DEFAULT_N  NORM(50.0f, COMP_RELTIME_MIN, COMP_RELTIME_MAX)
 #define COMP_MAKEUP_MIN        -12.0f
 #define COMP_MAKEUP_MAX         20.0f
-#define COMP_MAKEUP_DEFAULT_N  -1.5f
+#define COMP_MAKEUP_DEFAULT_N   0.68f
 #define COMP_MIX_DEFAULT_N      1.0f
 
 static inline float db2norm(float db, float min, float max)
@@ -38,12 +42,12 @@ static inline float db2norm(float db, float min, float max)
 
 static inline float norm2db(float v, float min, float max)
 {
-    return (v * max) + (min * (1 - v));
+    return (v * max) + (min * (1.0f - v));
 }
 
-static inline float norm2factor(float v, float min, float max)
+static inline float normdb2factor(float v, float min, float max)
 {
-    return powf(10.0f, norm2db(v, min, max) / 20);
+    return powf(10.0f, norm2db(v, min, max) / 20.0f);
 }
 
 enum {

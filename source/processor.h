@@ -6,6 +6,7 @@
 
 #include "public.sdk/source/vst/vstaudioeffect.h"
 #include "paramids.h"
+#include "compressor.h"
 
 namespace MyVst {
 
@@ -63,7 +64,6 @@ protected:
     template <typename SampleType>
     void processVuPPM (SampleType** in, float *vuPPM, int nrChannels, int nrSamples);
 
-    void setCompressorParams(float thresh, float attime, float reltime, float ratio, float knee, float makeup, float mix);
     void handleParamChanges(Steinberg::Vst::IParameterChanges* paramChanges);
 
     /*
@@ -71,40 +71,10 @@ protected:
      * Nobody, neither the controller, will pass this if nothing is save, therefore we
      * default it here.
      */
-	float fGain = 1.0f;
+	float fGain = GAIN_DEFAULT_N;
 
-    // Compressor
-    struct {
-        bool enable = true;
-
-        // user tunable params
-        float thresh = COMP_THRESH_DEFAULT_N;
-        float attime = COMP_ATTIME_DEFAULT_N; // attack time
-        float reltime = COMP_RELTIME_DEFAULT_N; // release time
-        float ratio = COMP_RATIO_DEFAULT_N;
-        float knee = COMP_KNEE_DEFAULT_N; // 0.0..1.0
-        float makeup = COMP_MAKEUP_DEFAULT_N;
-        float mix = COMP_MIX_DEFAULT_N; // mix original and compressed 0.0..1.0
-        // internal params
-        float rmscoef;
-        float atcoef;
-        float ratatcoef;
-        float relcoef;
-        float ratrelcoef;
-        float cthreshv;
-        float gr_meter_decay;
-
-        // process vars
-        float runave[2];
-        float runmax[2];
-        float rundb[2];
-        float overdb[2];
-        float averatio[2];
-        float runratio[2];
-        float cratio[2];
-        float maxover[2];
-        float gr_meter[2]; // TODO use for visual
-    } comp;
+    Compressor <Sample32> comp32;
+    Compressor <Sample64> comp64;
 
     // VU
 	float fVuPPMInOld[2];

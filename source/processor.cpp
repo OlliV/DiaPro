@@ -54,56 +54,16 @@ tresult PLUGIN_API DiaProProcessor::terminate ()
 	return AudioEffect::terminate();
 }
 
-void DiaProProcessor::setCompressorParams(float thresh, float attime, float reltime, float ratio, float knee, float makeup, float mix)
-{
-    float sampleRate = (float)this->processSetup.sampleRate;
-
-    comp.thresh = thresh;
-    comp.attime = attime;
-    comp.reltime = reltime;
-    comp.ratio = ratio;
-    comp.makeup = makeup;
-    comp.mix = mix; // mix original and compressed 0..1
-    comp.atcoef = exp(-1 / (comp.attime * sampleRate));
-    comp.relcoef = exp(-1 / (comp.reltime * sampleRate));
-    comp.knee = knee;
-    float cthresh = comp.thresh - 3 * comp.knee;
-    comp.cthreshv = exp(cthresh * DB2LOG);
-}
-
 tresult PLUGIN_API DiaProProcessor::setActive (TBool state)
 {
 	//--- called when the Plug-in is enable/disable (On/Off) -----
     if (state) {
         float sampleRate = (float)this->processSetup.sampleRate;
 
-        /*
-         * Init comp
-         */
-        setCompressorParams(comp.thresh, comp.attime, comp.reltime, comp.ratio, comp.knee, comp.makeup, comp.mix);
-        comp.rmscoef = 0;
-        comp.ratatcoef = exp(-1.0f / (0.00001f * sampleRate));
-        comp.ratrelcoef = exp(-1.0f / (0.5f * sampleRate));
-        comp.gr_meter_decay = exp(1.0f / (1.0f * sampleRate));
-
-        comp.runave[0] = 0;
-        comp.runave[1] = 0;
-        comp.runmax[0] = 0;
-        comp.runmax[1] = 0;
-        comp.rundb[0] = 0;
-        comp.rundb[1] = 0;
-        comp.overdb[0] = 0;
-        comp.overdb[1] = 0;
-        comp.averatio[0] = 0;
-        comp.averatio[1] = 0;
-        comp.runratio[0] = 0;
-        comp.runratio[1] = 0;
-        comp.cratio[0] = 0;
-        comp.cratio[1] = 0;
-        comp.maxover[0] = 0;
-        comp.maxover[1] = 0;
-        comp.gr_meter[0] = 1.0f;
-        comp.gr_meter[1] = 1.0f;
+        comp32.updateParams(sampleRate);
+        comp32.reset();
+        comp64.updateParams(sampleRate);
+        comp64.reset();
     }
 
     /*
@@ -120,80 +80,97 @@ void DiaProProcessor::handleParamChanges(IParameterChanges* paramChanges)
         int32 numParamsChanged = paramChanges->getParameterCount ();
         // for each parameter which are some changes in this audio block:
         for (int32 i = 0; i < numParamsChanged; i++) {
-            IParamValueQueue* paramQueue = paramChanges->getParameterData (i);
+            IParamValueQueue* paramQueue = paramChanges->getParameterData(i);
             if (paramQueue) {
                 ParamValue value;
                 int32 sampleOffset;
-                int32 numPoints = paramQueue->getPointCount ();
+                int32 numPoints = paramQueue->getPointCount();
+                bool compChanged = false;
+
                 switch (paramQueue->getParameterId ()) {
                     case kGainId:
                         // we use in this example only the last point of the queue.
                         // in some wanted case for specific kind of parameter it makes sense to
                         // retrieve all points and process the whole audio block in small blocks.
                         if (paramQueue->getPoint(numPoints - 1, sampleOffset, value) == kResultTrue) {
-                            fGain = norm2factor((float)value, GAIN_MIN, GAIN_MAX);
+                            fGain = value;
                         }
                         break;
 
                     case kCompThreshId:
                         if (paramQueue->getPoint(numPoints - 1, sampleOffset, value) == kResultTrue) {
-                            float thresh = norm2db((float)value, COMP_THRESH_MIN, 0);
-                            setCompressorParams(thresh, comp.attime, comp.reltime, comp.ratio, comp.knee, comp.makeup, comp.mix);
+                            comp32.thresh = value;
+                            comp64.thresh = value;
+                            compChanged = true;
                         }
                         break;
 
                     case kCompAttimeId:
                         if (paramQueue->getPoint(numPoints - 1, sampleOffset, value) == kResultTrue) {
-                            float attime = value;
-                            setCompressorParams(comp.thresh, attime, comp.reltime, comp.ratio, comp.knee, comp.makeup, comp.mix);
+                            comp32.attime = value;
+                            comp64.attime = value;
+                            compChanged = true;
                         }
                         break;
 
                     case kCompReltimeId:
                         if (paramQueue->getPoint(numPoints - 1, sampleOffset, value) == kResultTrue) {
-                            float reltime = value;
-                            setCompressorParams(comp.thresh, comp.attime, reltime, comp.ratio, comp.knee, comp.makeup, comp.mix);
+                            comp32.reltime = value;
+                            comp64.reltime = value;
+                            compChanged = true;
                         }
                         break;
 
                     case kCompRatioId:
                         if (paramQueue->getPoint(numPoints - 1, sampleOffset, value) == kResultTrue) {
-                            float ratio = value;
-                            setCompressorParams(comp.thresh, comp.attime, comp.reltime, ratio, comp.knee, comp.makeup, comp.mix);
+                            comp32.ratio = value;
+                            comp64.ratio = value;
+                            compChanged = true;
                         }
                         break;
 
                     case kCompKneeId:
                         if (paramQueue->getPoint(numPoints - 1, sampleOffset, value) == kResultTrue) {
-                            float knee = value;
-                            setCompressorParams(comp.thresh, comp.attime, comp.reltime, comp.ratio, knee, comp.makeup, comp.mix);
+                            comp32.knee = value;
+                            comp64.knee = value;
+                            compChanged = true;
                         }
                         break;
 
                     case kCompMakeupId:
                         if (paramQueue->getPoint(numPoints - 1, sampleOffset, value) == kResultTrue) {
-                            float makeup = norm2factor((float)value, GAIN_MIN, GAIN_MAX);
-                            setCompressorParams(comp.thresh, comp.attime, comp.reltime, comp.ratio, comp.knee, makeup, comp.mix);
+                            comp32.makeup = value;
+                            comp64.makeup = value;
+                            compChanged = true;
                         }
                         break;
 
                     case kCompMixId:
                         if (paramQueue->getPoint(numPoints - 1, sampleOffset, value) == kResultTrue) {
-                            float mix = value;
-                            setCompressorParams(comp.thresh, comp.attime, comp.reltime, comp.ratio, comp.knee, comp.makeup, mix);
+                            comp32.mix = value;
+                            comp64.mix = value;
+                            compChanged = true;
                         }
                         break;
 
                     case kCompEnable:
                         if (paramQueue->getPoint(numPoints - 1, sampleOffset, value) == kResultTrue) {
-                            comp.enable = value > 0.5f;
+                            comp32.enabled = value > 0.5f;
+                            comp64.enabled = value > 0.5f;
                         }
+                        break;
 
                     case kBypassId:
                         if (paramQueue->getPoint (numPoints - 1, sampleOffset, value) == kResultTrue) {
                             bBypass = value > 0.5f;
                         }
                         break;
+                }
+                if (compChanged) {
+                    float sampleRate = (float)this->processSetup.sampleRate;
+
+                    comp32.updateParams(sampleRate);
+                    comp64.updateParams(sampleRate);
                 }
             }
         }
@@ -262,15 +239,6 @@ tresult PLUGIN_API DiaProProcessor::process (Vst::ProcessData& data)
     memcpy(fVuPPMOut, fVuPPMOutOld, sizeof(fVuPPMOut));
 
     /*
-    * Process input VU meters
-     */
-    if (data.symbolicSampleSize == kSample32) {
-        processVuPPM<Sample32>((Sample32**)in, fVuPPMIn, nrChannels, data.numSamples);
-    } else {
-        processVuPPM<Sample64>((Sample64**)in, fVuPPMIn, nrChannels, data.numSamples);
-    }
-
-    /*
      * We first copy the input bufs to the outputs if necessary.
      */
     size_t sampleFramesSize = getSampleFramesSizeInBytes(processSetup, data.numSamples);
@@ -280,19 +248,19 @@ tresult PLUGIN_API DiaProProcessor::process (Vst::ProcessData& data)
     }
 
     if (data.symbolicSampleSize == kSample32) {
+        processVuPPM<Sample32>((Sample32**)in, fVuPPMIn, nrChannels, data.numSamples);
+
         if (!bBypass) {
-            if (comp.enable) {
-                processCompressor<Sample32>((Sample32**)out, nrChannels, data.numSamples);
-            }
+            comp32.process((Sample32**)out, nrChannels, data.numSamples);
             processGain<Sample32>((Sample32**)out, nrChannels, data.numSamples, fGain);
         }
 
         processVuPPM<Sample32>((Sample32**)out, fVuPPMOut, nrChannels, data.numSamples);
     } else {
-        if (bBypass) {
-            if (comp.enable) {
-                processCompressor<Sample64>((Sample64**)out, nrChannels, data.numSamples);
-            }
+        processVuPPM<Sample64>((Sample64**)in, fVuPPMIn, nrChannels, data.numSamples);
+
+        if (!bBypass) {
+            comp64.process((Sample64**)out, nrChannels, data.numSamples);
             processGain<Sample64>((Sample64**)out, nrChannels, data.numSamples, fGain);
         }
 
@@ -341,13 +309,8 @@ tresult PLUGIN_API DiaProProcessor::setupProcessing (Vst::ProcessSetup& newSetup
 
 tresult PLUGIN_API DiaProProcessor::canProcessSampleSize (int32 symbolicSampleSize)
 {
-	// by default kSample32 is supported
-	if (symbolicSampleSize == Vst::kSample32)
+	if (symbolicSampleSize == Vst::kSample32 || symbolicSampleSize == Vst::kSample64)
 		return kResultTrue;
-
-	// disable the following comment if your processing support kSample64
-	/* if (symbolicSampleSize == Vst::kSample64)
-		return kResultTrue; */
 
 	return kResultFalse;
 }
@@ -355,52 +318,42 @@ tresult PLUGIN_API DiaProProcessor::canProcessSampleSize (int32 symbolicSampleSi
 tresult PLUGIN_API DiaProProcessor::setBusArrangements (Steinberg::Vst::SpeakerArrangement* inputs, int32 numIns,
                                                         Steinberg::Vst::SpeakerArrangement* outputs, int32 numOuts)
 {
-    if (numIns == 1 && numOuts == 1)
-    {
+    if (numIns == 1 && numOuts == 1) {
         // the host wants Mono => Mono (or 1 channel -> 1 channel)
-        if (Steinberg::Vst::SpeakerArr::getChannelCount (inputs[0]) == 1 &&
-            Steinberg::Vst::SpeakerArr::getChannelCount (outputs[0]) == 1)
-        {
-            auto* bus = FCast<Steinberg::Vst::AudioBus> (audioInputs.at (0));
-            if (bus)
-            {
+        if (Steinberg::Vst::SpeakerArr::getChannelCount(inputs[0]) == 1 &&
+            Steinberg::Vst::SpeakerArr::getChannelCount(outputs[0]) == 1) {
+            auto* bus = FCast<Steinberg::Vst::AudioBus>(audioInputs.at (0));
+            if (bus) {
                 // check if we are Mono => Mono, if not we need to recreate the busses
-                if (bus->getArrangement () != inputs[0])
-                {
-                    getAudioInput (0)->setArrangement (inputs[0]);
-                    getAudioInput (0)->setName (STR16 ("Mono In"));
-                    getAudioOutput (0)->setArrangement (inputs[0]);
-                    getAudioOutput (0)->setName (STR16 ("Mono Out"));
+                if (bus->getArrangement() != inputs[0]) {
+                    getAudioInput(0)->setArrangement(inputs[0]);
+                    getAudioInput(0)->setName(STR16("Mono In"));
+                    getAudioOutput(0)->setArrangement(inputs[0]);
+                    getAudioOutput(0)->setName (STR16("Mono Out"));
                 }
                 return kResultOk;
             }
-        }
-        // the host wants something else than Mono => Mono,
-        // in this case we are always Stereo => Stereo
-        else
-        {
-            auto* bus = FCast<Steinberg::Vst::AudioBus> (audioInputs.at (0));
-            if (bus)
-            {
+        } else {
+            // the host wants something else than Mono => Mono,
+            // in this case we are always Stereo => Stereo
+            auto* bus = FCast<Steinberg::Vst::AudioBus>(audioInputs.at (0));
+            if (bus) {
                 tresult result = kResultFalse;
 
                 // the host wants 2->2 (could be LsRs -> LsRs)
-                if (Steinberg::Vst::SpeakerArr::getChannelCount (inputs[0]) == 2 &&
-                    Steinberg::Vst::SpeakerArr::getChannelCount (outputs[0]) == 2)
-                {
-                    getAudioInput (0)->setArrangement (inputs[0]);
-                    getAudioInput (0)->setName (STR16 ("Stereo In"));
-                    getAudioOutput (0)->setArrangement (outputs[0]);
-                    getAudioOutput (0)->setName (STR16 ("Stereo Out"));
+                if (Steinberg::Vst::SpeakerArr::getChannelCount(inputs[0]) == 2 &&
+                    Steinberg::Vst::SpeakerArr::getChannelCount(outputs[0]) == 2) {
+                    getAudioInput (0)->setArrangement(inputs[0]);
+                    getAudioInput (0)->setName(STR16("Stereo In"));
+                    getAudioOutput (0)->setArrangement(outputs[0]);
+                    getAudioOutput (0)->setName(STR16("Stereo Out"));
                     result = kResultTrue;
-                }
-                // the host want something different than 1->1 or 2->2 : in this case we want stereo
-                else if (bus->getArrangement () != Steinberg::Vst::SpeakerArr::kStereo)
-                {
-                    getAudioInput (0)->setArrangement (Steinberg::Vst::SpeakerArr::kStereo);
-                    getAudioInput (0)->setName (STR16 ("Stereo In"));
-                    getAudioOutput (0)->setArrangement (Steinberg::Vst::SpeakerArr::kStereo);
-                    getAudioOutput (0)->setName (STR16 ("Stereo Out"));
+                } else if (bus->getArrangement() != Steinberg::Vst::SpeakerArr::kStereo) {
+                    // the host want something different than 1->1 or 2->2 : in this case we want stereo
+                    getAudioInput (0)->setArrangement(Steinberg::Vst::SpeakerArr::kStereo);
+                    getAudioInput (0)->setName(STR16("Stereo In"));
+                    getAudioOutput (0)->setArrangement(Steinberg::Vst::SpeakerArr::kStereo);
+                    getAudioOutput (0)->setName(STR16("Stereo Out"));
                     result = kResultFalse;
                 }
 
@@ -423,7 +376,7 @@ tresult PLUGIN_API DiaProProcessor::setState (IBStream* state)
     int32 savedBypass = 0;
     float savedGain = 0;
     float savedCompThresh = 0;
-    float savedComAtttime;
+    float savedComAttime = 0;
     float savedCompReltime = 0;
     float savedCompRatio = 0;
     float savedCompKnee = 0;
@@ -434,7 +387,7 @@ tresult PLUGIN_API DiaProProcessor::setState (IBStream* state)
     if (!streamer.readInt32(savedBypass) ||
         !streamer.readFloat(savedGain) ||
         !streamer.readFloat(savedCompThresh) ||
-        !streamer.readFloat(savedComAtttime) ||
+        !streamer.readFloat(savedComAttime) ||
         !streamer.readFloat(savedCompReltime) ||
         !streamer.readFloat(savedCompRatio) ||
         !streamer.readFloat(savedCompKnee) ||
@@ -447,8 +400,28 @@ tresult PLUGIN_API DiaProProcessor::setState (IBStream* state)
 
     bBypass = savedBypass > 0;
     fGain = savedGain;
-    setCompressorParams(savedCompThresh, savedComAtttime, savedCompReltime, savedCompRatio, savedCompKnee, savedCompMakeup, savedCompMakeup);
-    comp.enable = savedCompEnable > 0.5f;
+
+    float sampleRate = (float)this->processSetup.sampleRate;
+
+    comp32.thresh = savedCompThresh;
+    comp32.attime = savedComAttime;
+    comp32.reltime = savedCompReltime;
+    comp32.ratio = savedCompRatio;
+    comp32.knee = savedCompKnee;
+    comp32.makeup = savedCompMakeup;
+    comp32.mix = savedCompMix;
+    comp32.enabled = savedCompEnable;
+    comp32.updateParams(sampleRate);
+
+    comp64.thresh = savedCompThresh;
+    comp64.attime = savedComAttime;
+    comp64.reltime = savedCompReltime;
+    comp64.ratio = savedCompRatio;
+    comp64.knee = savedCompKnee;
+    comp64.makeup = savedCompMakeup;
+    comp64.mix = savedCompMix;
+    comp64.enabled = savedCompEnable;
+    comp64.updateParams(sampleRate);
 
 	return kResultOk;
 }
