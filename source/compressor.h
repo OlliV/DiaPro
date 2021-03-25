@@ -47,31 +47,21 @@ private:
      * Internal parameters.
      */
     struct {
-        SampleType cthresh;
-        SampleType rmscoef;
         SampleType atcoef;
-        SampleType ratatcoef;
         SampleType relcoef;
-        SampleType ratrelcoef;
+        SampleType cthresh_db;
         SampleType cthreshv;
         SampleType ratio;
-        SampleType gr_meter_decay;
         SampleType cmakeup;
+        SampleType gr_meter_decay;
     } cooked;
 
     /**
      * Per channel process variables.
      */
-    struct {
-        SampleType runave[2];
-        SampleType runmax[2];
-        SampleType rundb[2];
-        SampleType overdb[2];
-        SampleType averatio[2];
-        SampleType runratio[2];
-        SampleType cratio[2];
-        SampleType maxover[2];
-    } proc;
+    struct proc {
+        SampleType runave;
+    } proc[2];
 };
 
 template <typename SampleType>
@@ -80,40 +70,23 @@ void Compressor<SampleType>::updateParams(float sampleRate)
     cooked.atcoef = exp(-1.0f / (attime * sampleRate));
     cooked.relcoef = exp(-1.0f / (reltime * sampleRate));
     cooked.ratio = PLAIN(ratio, COMP_RATIO_MIN, COMP_RATIO_MAX);
-    cooked.cthresh = norm2db(thresh, COMP_THRESH_MIN, COMP_THRESH_MAX) - 3.0f * knee;
-    cooked.cthreshv = exp(cooked.cthresh * DB2LOG);
+    cooked.cthresh_db = norm2db(thresh, COMP_THRESH_MIN, COMP_THRESH_MAX);
+    cooked.cthreshv = exp(cooked.cthresh_db * DB2LOG);
     cooked.cmakeup = normdb2factor(makeup, COMP_MAKEUP_MIN, COMP_MAKEUP_MAX);
-
-    cooked.rmscoef = 0;
-    cooked.ratatcoef = exp(-1.0f / (0.00001f * sampleRate));
-    cooked.ratrelcoef = exp(-1.0f / (0.5f * sampleRate));
     cooked.gr_meter_decay = exp(1.0f / (1.0f * sampleRate));
 }
 
 template <typename SampleType>
 void Compressor<SampleType>::reset(void)
 {
-    proc.runave[0] = 0;
-    proc.runave[1] = 0;
-    proc.runmax[0] = 0;
-    proc.runmax[1] = 0;
-    proc.rundb[0] = 0;
-    proc.rundb[1] = 0;
-    proc.overdb[0] = 0;
-    proc.overdb[1] = 0;
-    proc.averatio[0] = 0;
-    proc.averatio[1] = 0;
-    proc.runratio[0] = 0;
-    proc.runratio[1] = 0;
-    proc.cratio[0] = 0;
-    proc.cratio[1] = 0;
-    proc.maxover[0] = 0;
-    proc.maxover[1] = 0;
+    proc[0].runave = 0;
+    proc[1].runave = 0;
     gr_meter[0] = 1.0f;
     gr_meter[1] = 1.0f;
 }
 
 // Copyright 2006, Thomas Scott Stillwell
+// Copyright 2021, Olli Vanhoja
 // All rights reserved.
 //
 //Redistribution and use in source and binary forms, with or without modification, are permitted
@@ -144,62 +117,65 @@ void Compressor<SampleType>::process(SampleType** inOut, int nrChannels, int nrS
     for (int ch = 0; ch < nrChannels; ch++) {
         SampleType *pSample = inOut[ch];
         int i = nrSamples;
-        SampleType prevAs = 0.0f;
+        struct proc *p = &proc[ch];
 
         while (i--) {
             SampleType s = *pSample;
-            SampleType as = fabs(s);
-            SampleType amax = fmax(prevAs, as);
-            prevAs = as;
 
-            proc.runave[ch] = (amax * amax) + cooked.rmscoef * (proc.runave[ch] - amax);
-            SampleType det = sqrt(fmax(0.0f, proc.runave[ch]));
+            /*
+             * det = RMS(in)
+             */
+            const SampleType as = fabs(s);
+            const SampleType det_in = as * as;
+            const SampleType rmscoef = det_in > p->runave ? cooked.atcoef : cooked.relcoef;
+            p->runave = fmax(0.0f, det_in + rmscoef * (p->runave - det_in));
+            const SampleType det = sqrt(p->runave);
+            const SampleType det_db = log(det) * LOG2DB;
 
-            proc.overdb[ch] = 2.08136898f * log(det / cooked.cthreshv) * LOG2DB;
-            proc.overdb[ch] = fmax(0.0f, proc.overdb[ch]);
+            const SampleType overdb = 2.08136898f * log(det / cooked.cthreshv) * LOG2DB;
 
-            if (proc.overdb[ch] - proc.rundb[ch] > 5.0f) {
-                proc.averatio[ch] = 4.0f;
+            SampleType out_db = 0.0f;
+            const SampleType max_knee_width_db = 10.0f;
+            const SampleType knee_width_db = norm2db(knee, 0.0f, max_knee_width_db);
+            if (overdb < -knee_width_db) {
+                /*
+                 * Left side of the knee, unity gain
+                 */
+                out_db = det_db;
+            } else if (fabs(overdb) <= knee_width_db) {
+                /*
+                 * Inside the knee.
+                 */
+                // out_db = det_db + (((1.0f / cooked.ratio) - 1.0) * pow((det_db - cooked.cthresh_db + (knee_width_db / 2.0f)), 2.0f)) / (2.0f * knee_width_db);
+                out_db = det_db + (((1.0f / cooked.ratio) - 1.0) * (2.08136898f * log(det / cooked.cthreshv * ((knee_width_db / 2) * DB2LOG)) * LOG2DB)) / (2.0f * knee_width_db);
+            } else if (overdb > knee_width_db) {
+                out_db = cooked.cthresh_db + (det_db - cooked.cthresh_db) / cooked.ratio;
             }
 
-            if (proc.overdb[ch] > proc.rundb[ch]) {
-                proc.rundb[ch] = proc.overdb[ch] + cooked.atcoef * (proc.rundb[ch] - proc.overdb[ch]);
-                proc.runratio[ch] = proc.averatio[ch] + cooked.ratatcoef * (proc.runratio[ch] - proc.averatio[ch]);
-            } else {
-                proc.rundb[ch] = proc.overdb[ch] + cooked.relcoef * (proc.rundb[ch] - proc.overdb[ch]);
-                proc.runratio[ch] = proc.averatio[ch] + cooked.ratrelcoef * (proc.runratio[ch] - proc.averatio[ch]);
-            }
-
-			proc.overdb[ch] = proc.rundb[ch];
-			proc.averatio[ch] = proc.runratio[ch];
-			if (ratio == 1.0f) {
-				proc.cratio[ch] = 12.0f + proc.averatio[ch];
-			} else {
-				proc.cratio[ch] = cooked.ratio;
-			}
-
-            SampleType gr = -proc.overdb[ch] * (proc.cratio[ch] - 1.0f) / proc.cratio[ch];
-            SampleType grv = exp(gr * DB2LOG);
-
-            proc.runmax[ch] = proc.maxover[ch] + cooked.relcoef * (proc.runmax[ch] - proc.maxover[ch]);
-            proc.maxover[ch] = proc.runmax[ch];
-
-            if (grv < gr_meter[ch]) {
-                gr_meter[ch] = grv;
-            } else {
-                gr_meter[ch] *= cooked.gr_meter_decay;
-                if (gr_meter[ch] > 1.0f) {
-                    gr_meter[ch] = 1.0f;
-                }
-            }
+            const SampleType gr_db = out_db - det_db;
+            const SampleType gr = exp(gr_db * DB2LOG);
 
             /*
              * The compressor is always running to make on/off transition smooth
              * and to avoid any sudden glitches when it's enabled.
              */
             if (enabled) {
-                *pSample++ = s * grv * cooked.cmakeup * mix + s * (1.0f - mix);
+                if (gr < gr_meter[ch]) {
+                    gr_meter[ch] = gr;
+                } else {
+                    gr_meter[ch] *= cooked.gr_meter_decay;
+                    if (gr_meter[ch] > 1.0f) {
+                        gr_meter[ch] = 1.0f;
+                    }
+                }
+
+                *pSample++ = s * gr * cooked.cmakeup * mix + s * (1.0f - mix);
             } else {
+                gr_meter[ch] *= cooked.gr_meter_decay;
+                if (gr_meter[ch] > 1.0f) {
+                    gr_meter[ch] = 1.0f;
+                }
+
                 pSample++;
             }
         }

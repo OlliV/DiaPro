@@ -18,7 +18,7 @@
 #define COMP_THRESH_MIN        -60.0f
 #define COMP_THRESH_MAX         0.0f
 #define COMP_THRESH_DEFAULT_N   0.85f
-#define COMP_RATIO_MIN          0.0f
+#define COMP_RATIO_MIN          1.0f
 #define COMP_RATIO_MAX          30.0f
 #define COMP_RATIO_DEFAULT_N    NORM(3.0f, COMP_RATIO_MIN, COMP_RATIO_MAX)
 #define COMP_KNEE_MIN           0.0f
