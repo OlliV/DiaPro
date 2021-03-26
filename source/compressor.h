@@ -147,7 +147,7 @@ void Compressor<SampleType>::process(SampleType** inOut, int nrChannels, int nrS
                  * Inside the knee.
                  */
                 // out_db = det_db + (((1.0f / cooked.ratio) - 1.0) * pow((det_db - cooked.cthresh_db + (knee_width_db / 2.0f)), 2.0f)) / (2.0f * knee_width_db);
-                out_db = det_db + (((1.0f / cooked.ratio) - 1.0) * (2.08136898f * log(det / cooked.cthreshv * ((knee_width_db / 2) * DB2LOG)) * LOG2DB)) / (2.0f * knee_width_db);
+                out_db = det_db + (((1.0f / cooked.ratio) - 1.0) * (2.08136898f * (log(det / cooked.cthreshv) + ((knee_width_db / 2) * DB2LOG)) * LOG2DB)) / (2.0f * knee_width_db);
             } else if (overdb > knee_width_db) {
                 out_db = cooked.cthresh_db + (det_db - cooked.cthresh_db) / cooked.ratio;
             }
