@@ -130,7 +130,7 @@ void Compressor<SampleType>::process(SampleType** inOut, int nrChannels, int nrS
             const SampleType rmscoef = det_in > p->runave ? cooked.atcoef : cooked.relcoef;
             p->runave = fmax(0.0f, det_in + rmscoef * (p->runave - det_in));
             const SampleType det = sqrt(p->runave);
-            const SampleType det_db = log(det) * LOG2DB;
+            const SampleType det_db = det <= 0.0f ? -96.0f : log(det) * LOG2DB;
 
             const SampleType overdb = 2.08136898f * log(det / cooked.cthreshv) * LOG2DB;
 
