@@ -1,5 +1,29 @@
 //------------------------------------------------------------------------
 // Copyright(c) 2021 Olli Vanhoja.
+// Copyright 2006, Thomas Scott Stillwell
+// All rights reserved.
+//
+//Redistribution and use in source and binary forms, with or without modification, are permitted
+//provided that the following conditions are met:
+//
+//Redistributions of source code must retain the above copyright notice, this list of conditions
+//and the following disclaimer.
+//
+//Redistributions in binary form must reproduce the above copyright notice, this list of conditions
+//and the following disclaimer in the documentation and/or other materials provided with the distribution.
+//
+//The name of Thomas Scott Stillwell may not be used to endorse or
+//promote products derived from this software without specific prior written permission.
+//
+//THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR
+//IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+//FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS
+//BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+//(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+//PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+//STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+//THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 //------------------------------------------------------------------------
 
 #pragma once
@@ -36,6 +60,7 @@ public:
     SampleType knee; // 0.0..1.0
     SampleType makeup;
     SampleType mix; // mix original and compressed 0.0..1.0
+    bool stereo_link = false;
     bool enabled = true;
 
     void updateParams(float sampleRate);
@@ -62,6 +87,10 @@ private:
     struct proc {
         SampleType runave;
     } proc[2];
+
+    SampleType detect(struct proc *p, SampleType xn);
+    SampleType comp_gr(struct proc *p, SampleType det);
+    void update_gr_meter(int ch, SampleType gr);
 };
 
 template <typename SampleType>
@@ -85,98 +114,113 @@ void Compressor<SampleType>::reset(void)
     gr_meter[1] = 1.0f;
 }
 
-// Copyright 2006, Thomas Scott Stillwell
-// Copyright 2021, Olli Vanhoja
-// All rights reserved.
-//
-//Redistribution and use in source and binary forms, with or without modification, are permitted
-//provided that the following conditions are met:
-//
-//Redistributions of source code must retain the above copyright notice, this list of conditions
-//and the following disclaimer.
-//
-//Redistributions in binary form must reproduce the above copyright notice, this list of conditions
-//and the following disclaimer in the documentation and/or other materials provided with the distribution.
-//
-//The name of Thomas Scott Stillwell may not be used to endorse or
-//promote products derived from this software without specific prior written permission.
-//
-//THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR
-//IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
-//FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS
-//BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-//(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-//PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
-//STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
-//THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+template <typename SampleType>
+SampleType Compressor<SampleType>::detect(struct proc *p, SampleType xn)
+{
+    const SampleType a = fabs(xn);
+    const SampleType det_in = a * a;
+    const SampleType rmscoef = det_in > p->runave ? cooked.atcoef : cooked.relcoef;
+    p->runave = fmax(0.0f, det_in + rmscoef * (p->runave - det_in));
+    const SampleType det = sqrt(p->runave);
+
+    /* det = RMS(in) */
+    return det;
+}
+
+template <typename SampleType>
+SampleType Compressor<SampleType>::comp_gr(struct proc *p, SampleType det)
+{
+    const SampleType det_db = det <= 0.0f ? -96.0f : log(det) * LOG2DB;
+    const SampleType overdb = 2.08136898f * log(det / cooked.cthreshv) * LOG2DB;
+
+    SampleType out_db = 0.0f;
+    const SampleType max_knee_width_db = 10.0f;
+    const SampleType knee_width_db = norm2db(knee, 0.0f, max_knee_width_db);
+    if (overdb < -knee_width_db) {
+        /*
+         * Left side of the knee, unity gain
+         */
+        out_db = det_db;
+    } else if (fabs(overdb) <= knee_width_db) {
+        /*
+         * Inside the knee.
+         */
+        // out_db = det_db + (((1.0f / cooked.ratio) - 1.0) * pow((det_db - cooked.cthresh_db + (knee_width_db / 2.0f)), 2.0f)) / (2.0f * knee_width_db);
+        out_db = det_db + (((1.0f / cooked.ratio) - 1.0) * (2.08136898f * (log(det / cooked.cthreshv) + ((knee_width_db / 2) * DB2LOG)) * LOG2DB)) / (2.0f * knee_width_db);
+    } else if (overdb > knee_width_db) {
+        out_db = cooked.cthresh_db + (det_db - cooked.cthresh_db) / cooked.ratio;
+    }
+
+    const SampleType gr_db = out_db - det_db;
+    const SampleType gr = exp(gr_db * DB2LOG);
+
+    return gr;
+}
+
+template <typename SampleType>
+void Compressor<SampleType>::update_gr_meter(int ch, SampleType gr)
+{
+    if (gr < gr_meter[ch]) {
+        gr_meter[ch] = gr;
+    } else {
+        gr_meter[ch] *= cooked.gr_meter_decay;
+        if (gr_meter[ch] > 1.0f) {
+            gr_meter[ch] = 1.0f;
+        }
+    }
+}
+
 template <typename SampleType>
 void Compressor<SampleType>::process(SampleType** inOut, int nrChannels, int nrSamples)
 {
     nrChannels = std::min(nrChannels, 2);
 
-    for (int ch = 0; ch < nrChannels; ch++) {
-        SampleType *pSample = inOut[ch];
-        int i = nrSamples;
-        struct proc *p = &proc[ch];
+    if (stereo_link && nrChannels == 2) {
+        for (int i = 0; i < nrSamples; i++) {
+            SampleType xnl = inOut[0][i];
+            SampleType xnr = inOut[1][i];
+            struct proc *p = &proc[0];
 
-        while (i--) {
-            SampleType s = *pSample;
-
-            /*
-             * det = RMS(in)
-             */
-            const SampleType as = fabs(s);
-            const SampleType det_in = as * as;
-            const SampleType rmscoef = det_in > p->runave ? cooked.atcoef : cooked.relcoef;
-            p->runave = fmax(0.0f, det_in + rmscoef * (p->runave - det_in));
-            const SampleType det = sqrt(p->runave);
-            const SampleType det_db = det <= 0.0f ? -96.0f : log(det) * LOG2DB;
-
-            const SampleType overdb = 2.08136898f * log(det / cooked.cthreshv) * LOG2DB;
-
-            SampleType out_db = 0.0f;
-            const SampleType max_knee_width_db = 10.0f;
-            const SampleType knee_width_db = norm2db(knee, 0.0f, max_knee_width_db);
-            if (overdb < -knee_width_db) {
-                /*
-                 * Left side of the knee, unity gain
-                 */
-                out_db = det_db;
-            } else if (fabs(overdb) <= knee_width_db) {
-                /*
-                 * Inside the knee.
-                 */
-                // out_db = det_db + (((1.0f / cooked.ratio) - 1.0) * pow((det_db - cooked.cthresh_db + (knee_width_db / 2.0f)), 2.0f)) / (2.0f * knee_width_db);
-                out_db = det_db + (((1.0f / cooked.ratio) - 1.0) * (2.08136898f * (log(det / cooked.cthreshv) + ((knee_width_db / 2) * DB2LOG)) * LOG2DB)) / (2.0f * knee_width_db);
-            } else if (overdb > knee_width_db) {
-                out_db = cooked.cthresh_db + (det_db - cooked.cthresh_db) / cooked.ratio;
-            }
-
-            const SampleType gr_db = out_db - det_db;
-            const SampleType gr = exp(gr_db * DB2LOG);
+            const SampleType det = detect(p, 0.5 * xnl + 0.5 * xnr);
+            const SampleType gr = comp_gr(p, det);
 
             /*
              * The compressor is always running to make on/off transition smooth
              * and to avoid any sudden glitches when it's enabled.
              */
             if (enabled) {
-                if (gr < gr_meter[ch]) {
-                    gr_meter[ch] = gr;
-                } else {
-                    gr_meter[ch] *= cooked.gr_meter_decay;
-                    if (gr_meter[ch] > 1.0f) {
-                        gr_meter[ch] = 1.0f;
-                    }
-                }
-
-                *pSample++ = s * gr * cooked.cmakeup * mix + s * (1.0f - mix);
+                update_gr_meter(0, gr);
+                update_gr_meter(1, gr);
+                inOut[0][i] = xnl * gr * cooked.cmakeup * mix + xnl * (1.0f - mix);
+                inOut[1][i] = xnr * gr * cooked.cmakeup * mix + xnr * (1.0f - mix);
             } else {
-                gr_meter[ch] *= cooked.gr_meter_decay;
-                if (gr_meter[ch] > 1.0f) {
-                    gr_meter[ch] = 1.0f;
-                }
+                update_gr_meter(0, 1.0f);
+                update_gr_meter(1, 1.0f);
+            }
+        }
+    } else {
+        for (int ch = 0; ch < nrChannels; ch++) {
+            SampleType *pSample = inOut[ch];
+            struct proc *p = &proc[ch];
+            int i = nrSamples;
 
-                pSample++;
+            while (i--) {
+                SampleType s = *pSample;
+
+                const SampleType det = detect(p, s);
+                const SampleType gr = comp_gr(p, det);
+
+                /*
+                 * The compressor is always running to make on/off transition smooth
+                 * and to avoid any sudden glitches when it's enabled.
+                 */
+                if (enabled) {
+                    update_gr_meter(ch, gr);
+                    *pSample++ = s * gr * cooked.cmakeup * mix + s * (1.0f - mix);
+                } else {
+                    update_gr_meter(ch, 1.0f);
+                    pSample++;
+                }
             }
         }
     }

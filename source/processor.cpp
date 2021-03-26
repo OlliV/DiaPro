@@ -153,7 +153,14 @@ void DiaProProcessor::handleParamChanges(IParameterChanges* paramChanges)
                         }
                         break;
 
-                    case kCompEnable:
+                    case kCompStereoLink:
+                        if (paramQueue->getPoint(numPoints - 1, sampleOffset, value) == kResultTrue) {
+                            comp32.stereo_link = value > 0.5f;
+                            comp64.stereo_link = value > 0.5f;
+                        }
+                        break;
+
+                    case kCompEnabled:
                         if (paramQueue->getPoint(numPoints - 1, sampleOffset, value) == kResultTrue) {
                             comp32.enabled = value > 0.5f;
                             comp64.enabled = value > 0.5f;
@@ -274,25 +281,36 @@ tresult PLUGIN_API DiaProProcessor::process (Vst::ProcessData& data)
     /* TODO should we check if VU values changed? */
     if (outParamChanges) {
         int32 index = 0;
+        IParamValueQueue* paramQueue;
 
-        IParamValueQueue* paramQueue0 = outParamChanges->addParameterData(kVuPPMIn0Id, index);
-        if (paramQueue0) {
-            paramQueue0->addPoint(0, fVuPPMIn[0], index);
+        paramQueue = outParamChanges->addParameterData(kVuPPMIn0Id, index);
+        if (paramQueue) {
+            paramQueue->addPoint(0, fVuPPMIn[0], index);
         }
 
-        IParamValueQueue* paramQueue1 = outParamChanges->addParameterData(kVuPPMIn1Id, index);
-        if (paramQueue1) {
-            paramQueue1->addPoint(0, fVuPPMIn[1], index);
+        paramQueue = outParamChanges->addParameterData(kVuPPMIn1Id, index);
+        if (paramQueue) {
+            paramQueue->addPoint(0, fVuPPMIn[1], index);
         }
 
-        IParamValueQueue* paramQueue2 = outParamChanges->addParameterData(kVuPPMOut0Id, index);
-        if (paramQueue2) {
-            paramQueue2->addPoint(0, fVuPPMOut[0], index);
+        paramQueue = outParamChanges->addParameterData(kVuPPMOut0Id, index);
+        if (paramQueue) {
+            paramQueue->addPoint(0, fVuPPMOut[0], index);
         }
 
-        IParamValueQueue* paramQueue3 = outParamChanges->addParameterData(kVuPPMOut1Id, index);
-        if (paramQueue3) {
-            paramQueue3->addPoint(0, fVuPPMOut[1], index);
+        paramQueue = outParamChanges->addParameterData(kVuPPMOut1Id, index);
+        if (paramQueue) {
+            paramQueue->addPoint(0, fVuPPMOut[1], index);
+        }
+
+        paramQueue = outParamChanges->addParameterData(kCompGrMeter0Id, index);
+        if (paramQueue) {
+            paramQueue->addPoint(0, (data.symbolicSampleSize == kSample32) ? comp32.gr_meter[0] : comp64.gr_meter[0], index);
+        }
+
+        paramQueue = outParamChanges->addParameterData(kCompGrMeter1Id, index);
+        if (paramQueue) {
+            paramQueue->addPoint(0, (data.symbolicSampleSize == kSample32) ? comp32.gr_meter[1] : comp64.gr_meter[1], index);
         }
     }
     memcpy(fVuPPMInOld, fVuPPMIn, sizeof(fVuPPMInOld));
@@ -382,7 +400,8 @@ tresult PLUGIN_API DiaProProcessor::setState (IBStream* state)
     float savedCompKnee = 0;
     float savedCompMakeup = 0;
     float savedCompMix = 0;
-    int32 savedCompEnable = 0;
+    int32 savedCompStereoLink = 0;
+    int32 savedCompEnabled = 0;
 
     if (!streamer.readInt32(savedBypass) ||
         !streamer.readFloat(savedGain) ||
@@ -393,7 +412,8 @@ tresult PLUGIN_API DiaProProcessor::setState (IBStream* state)
         !streamer.readFloat(savedCompKnee) ||
         !streamer.readFloat(savedCompMakeup) ||
         !streamer.readFloat(savedCompMix) ||
-        !streamer.readInt32(savedCompEnable)
+        !streamer.readInt32(savedCompStereoLink) ||
+        !streamer.readInt32(savedCompEnabled)
         ) {
             return kResultFalse;
     }
@@ -410,7 +430,8 @@ tresult PLUGIN_API DiaProProcessor::setState (IBStream* state)
     comp32.knee = savedCompKnee;
     comp32.makeup = savedCompMakeup;
     comp32.mix = savedCompMix;
-    comp32.enabled = savedCompEnable;
+    comp32.stereo_link = savedCompStereoLink;
+    comp32.enabled = savedCompEnabled;
     comp32.updateParams(sampleRate);
 
     comp64.thresh = savedCompThresh;
@@ -420,7 +441,8 @@ tresult PLUGIN_API DiaProProcessor::setState (IBStream* state)
     comp64.knee = savedCompKnee;
     comp64.makeup = savedCompMakeup;
     comp64.mix = savedCompMix;
-    comp64.enabled = savedCompEnable;
+    comp64.stereo_link = savedCompStereoLink;
+    comp64.enabled = savedCompEnabled;
     comp64.updateParams(sampleRate);
 
 	return kResultOk;

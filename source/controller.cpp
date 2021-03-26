@@ -105,13 +105,13 @@ tresult PLUGIN_API DiaProController::initialize (FUnknown* context)
     Steinberg::UString(unitInfo.name, USTRINGSIZE(unitInfo.name)).assign(USTRING("Output"));
     addUnit(new Unit(unitInfo));
 
-	// Here you could register some parameters
-    addVuMeters();
-
-    int32 stepCount = 1;
+    const int32 stepCountToggle = 1;
     ParamValue defaultVal = 0;
     int32 flags = ParameterInfo::kCanAutomate | ParameterInfo::kIsBypass;
-    parameters.addParameter(STR16 ("Bypass"), nullptr, stepCount, defaultVal, flags, kBypassId);
+    parameters.addParameter(STR16 ("Bypass"), nullptr, stepCountToggle, defaultVal, flags, kBypassId);
+
+    addVuMeters();
+    addGrMeters();
 
     Parameter *param;
 
@@ -156,15 +156,25 @@ tresult PLUGIN_API DiaProController::initialize (FUnknown* context)
     parameters.addParameter(param);
 	param->setUnitID(1);
 
+    // Comp stereo link
+    parameters.addParameter(STR16("Stereo Link"), // title
+                            STR16("On/Off"), // units
+                            stepCountToggle,
+                            0, // defaultNormalizedValue
+                            Vst::ParameterInfo::kCanAutomate, // flags
+                            kCompStereoLink, // tag
+                            1, // unitID
+                            STR16("Stereo Link")); // shortTitle
+
     // Comp enable
     parameters.addParameter(STR16("Enable Compressor"), // title
                             STR16("On/Off"), // units
-                            1, // stepCount => 1 means toggle
+                            stepCountToggle,
                             1, // defaultNormalizedValue
                             Vst::ParameterInfo::kCanAutomate, // flags
-                            kCompEnable, // tag
-                            0, // unitID => not using units
-                            STR16 ("Enable")); // shortTitle
+                            kCompEnabled, // tag
+                            1, // unitID
+                            STR16("Enable")); // shortTitle
 
     // Output Gain parameter
     param = new GainParameter("Gain", ParameterInfo::kCanAutomate, kGainId, GAIN_MIN, GAIN_MAX);
@@ -184,6 +194,16 @@ void DiaProController::addVuMeters(void)
     parameters.addParameter(STR16("VuPPMIn1"), nullptr, stepCount, defaultVal, flags, kVuPPMIn1Id);
     parameters.addParameter(STR16("VuPPMOut0"), nullptr, stepCount, defaultVal, flags, kVuPPMOut0Id);
     parameters.addParameter(STR16("VuPPMOut1"), nullptr, stepCount, defaultVal, flags, kVuPPMOut1Id);
+}
+
+void DiaProController::addGrMeters(void)
+{
+    int32 stepCount = 0;
+    ParamValue defaultVal = 0;
+    int32 flags = ParameterInfo::kIsReadOnly;
+
+    parameters.addParameter(STR16("CompGrMeter0"), nullptr, stepCount, defaultVal, flags, kCompGrMeter0Id);
+    parameters.addParameter(STR16("CompGrMeter1"), nullptr, stepCount, defaultVal, flags, kCompGrMeter1Id);
 }
 
 tresult PLUGIN_API DiaProController::terminate ()
@@ -209,7 +229,8 @@ tresult PLUGIN_API DiaProController::setComponentState (IBStream* state)
     float savedCompKnee;
     float savedCompMakeup;
     float savedCompMix;
-    int32 savedCompEnable;
+    int32 savedCompStereoLink;
+    int32 savedCompEnabled;
 
     if (!streamer.readInt32(savedBypass) ||
         !streamer.readFloat(savedGain) ||
@@ -220,7 +241,8 @@ tresult PLUGIN_API DiaProController::setComponentState (IBStream* state)
         !streamer.readFloat(savedCompKnee) ||
         !streamer.readFloat(savedCompMakeup) ||
         !streamer.readFloat(savedCompMix) ||
-        !streamer.readInt32(savedCompEnable)) {
+        !streamer.readInt32(savedCompStereoLink) ||
+        !streamer.readInt32(savedCompEnabled)) {
         return kResultFalse;
     }
 
@@ -233,7 +255,8 @@ tresult PLUGIN_API DiaProController::setComponentState (IBStream* state)
     setParamNormalized(kCompKneeId, savedCompKnee);
     setParamNormalized(kCompMakeupId, savedCompMakeup);
     setParamNormalized(kCompMixId, savedCompMix);
-    setParamNormalized(kCompEnable, savedCompEnable ? 1 : 0);
+    setParamNormalized(kCompStereoLink, savedCompStereoLink ? 1 : 0);
+    setParamNormalized(kCompEnabled, savedCompEnabled ? 1 : 0);
 
 	return kResultOk;
 }

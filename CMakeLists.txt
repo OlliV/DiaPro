@@ -44,6 +44,8 @@ smtg_add_vst3_resource(${target} "resource/background.png")
 smtg_add_vst3_resource(${target} "resource/switch.png")
 smtg_add_vst3_resource(${target} "resource/vu_off.png")
 smtg_add_vst3_resource(${target} "resource/vu_on.png")
+smtg_add_vst3_resource(${target} "resource/gr_off.png")
+smtg_add_vst3_resource(${target} "resource/gr_on.png")
 
 smtg_add_vst3_snapshot(${target} resource/95C62AD875FF5DFC8D89C9C51E998E0D_snapshot.png)
 smtg_add_vst3_snapshot(${target} resource/95C62AD875FF5DFC8D89C9C51E998E0D_snapshot_2.0x.png)

@@ -52,11 +52,11 @@ static inline float normdb2factor(float v, float min, float max)
 
 enum {
     /** parameter ID */
-    kVuPPMIn0Id = 0,    ///< for the Vu value return to host (ReadOnly parameter for our UI)
+    kBypassId = 0,      ///< Bypass value (we will handle the bypass process) (is automatable)
+    kVuPPMIn0Id,        ///< for the Vu value return to host (ReadOnly parameter for our UI)
     kVuPPMIn1Id,        ///< for the Vu value return to host (ReadOnly parameter for our UI)
     kVuPPMOut0Id,       ///< for the Vu value return to host (ReadOnly parameter for our UI)
     kVuPPMOut1Id,       ///< for the Vu value return to host (ReadOnly parameter for our UI)
-    kBypassId,          ///< Bypass value (we will handle the bypass process) (is automatable)
     kGainId,
     kCompThreshId,
     kCompAttimeId,
@@ -65,5 +65,9 @@ enum {
     kCompKneeId,
     kCompMakeupId,
     kCompMixId,
-    kCompEnable,
+    kCompStereoLink,
+    kCompEnabled,
+    kCompGrMeter0Id,
+    kCompGrMeter1Id,
+    kNrParams
 };

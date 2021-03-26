@@ -49,6 +49,7 @@ public:
 protected:
 private:
     void addVuMeters(void);
+    void addGrMeters(void);
 };
 
 }
