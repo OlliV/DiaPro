@@ -109,9 +109,9 @@ void DeEsser<SampleType>::process(SampleType **inOut, int nrChannels, int nrSamp
 
         en = (tmp > en) ? en + at * (tmp - en) : en * re; // envelope
         if (en > th) {
-            g=f1 + f2 + tmp * (th / en);
+            g = f1 + f2 + tmp * (th / en);
         } else {
-            g=f1 + f2 + tmp; // limit
+            g = f1 + f2 + tmp; // limit
         }
 
         //brackets for full-band!!!
@@ -124,14 +124,14 @@ void DeEsser<SampleType>::process(SampleType **inOut, int nrChannels, int nrSamp
         }
     }
 
-    if (fabs (f1) < 1.0e-10) {
+    if (fabs(f1) < 1.0e-10) {
         proc.fbuf1 = 0.0f;
         proc.fbuf2 = 0.0f;
     } else {
         proc.fbuf1 = f1;
         proc.fbuf2 = f2;
     }
-    if (fabs (en) < 1.0e-10) {
+    if (fabs(en) < 1.0e-10) {
         proc.env = 0.0f;
     } else {
         proc.env = en;

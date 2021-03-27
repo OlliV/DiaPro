@@ -8,7 +8,7 @@ reason why it couldn't be used for any purpose.
 Each unit of the processor is documented separately and at the beginning
 of each section there are some presets given as starting point. These
 values are determined by trial and error, and by stealing from other
-sources. One excellent website discussing effects in general is 
+sources such as
 [Musician on a mission](https://www.musicianonamission.com/).
 
 Parameters
@@ -30,11 +30,15 @@ channels to its output.
 
 **Threshold [dB]**
 
-**Frequency [Hz]**
-
 Determines the signal levels when the de-esser starts working.
 
+**Frequency [Hz]**
+
+The center frequency of sibilances to be suppressed.
+
 **Drive [dB]**
+
+The gain applied to the sibilances.
 
 ## Compressor
 
