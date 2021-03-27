@@ -56,19 +56,20 @@
 		<view back-color="~ BlackCColor" background-offset="0, 0" class="CTextLabel" default-value="0.5" font="~ NormalFont" font-antialias="true" font-color="~ WhiteCColor" frame-color="~ BlackCColor" frame-width="1" max-value="1" min-value="0" mouse-enabled="true" opacity="1" origin="60, 270" round-rect-radius="6" shadow-color="~ BlackCColor" size="60, 18" style-3D-in="false" style-3D-out="false" style-no-draw="false" style-no-frame="false" style-no-text="false" style-round-rect="false" style-shadow-text="false" text-alignment="center" text-inset="5, 0" text-rotation="0" text-shadow-offset="1, 1" title="Drive" transparent="true" value-precision="2" wants-focus="false" wheel-inc-value="0.1"/>
 		<view angle-range="270" angle-start="135" bitmap="ST_knob_Phase_lll_50x50_128f" class="CAnimKnob" control-tag="De-esserDrive" default-value="0.5" height-of-one-image="50" inverse-bitmap="false" max-value="1" min-value="0" mouse-enabled="true" opacity="1" origin="65, 290" size="50, 50" sub-pixmaps="128" transparent="false" value-inset="0" wants-focus="false" wheel-inc-value="0.1" zoom-factor="1.5"/>
 		<view back-color="~ BlackCColor" background-offset="0, 0" class="CTextEdit" control-tag="De-esserDrive" default-value="0.5" font="~ NormalFontSmall" font-antialias="true" font-color="~ WhiteCColor" frame-color="~ GreyCColor" frame-width="1" immediate-text-change="false" max-value="1" min-value="0" mouse-enabled="true" opacity="1" origin="60, 340" round-rect-radius="6" secure-style="false" shadow-color="~ BlackCColor" size="60, 18" style-3D-in="false" style-3D-out="false" style-doubleclick="false" style-no-draw="false" style-no-frame="false" style-no-text="false" style-round-rect="true" style-shadow-text="false" text-alignment="center" text-inset="5, 0" text-rotation="0" text-shadow-offset="1, 1" title="0.00" transparent="false" value-precision="2" wants-focus="true" wheel-inc-value="0.1"/>
-		<view back-color="~ BlackCColor" background-offset="0, 0" class="CTextEdit" control-tag="CompressorLook-Aheaad" default-value="0.0666667" font="~ NormalFontSmall" font-antialias="true" font-color="~ WhiteCColor" frame-color="~ GreyCColor" frame-width="1" immediate-text-change="false" max-value="1" min-value="0" mouse-enabled="true" opacity="1" origin="165, 740" round-rect-radius="6" secure-style="false" shadow-color="~ BlackCColor" size="60, 18" style-3D-in="false" style-3D-out="false" style-doubleclick="false" style-no-draw="false" style-no-frame="false" style-no-text="false" style-round-rect="true" style-shadow-text="false" text-alignment="center" text-inset="5, 0" text-rotation="0" text-shadow-offset="1, 1" title="1.00" transparent="false" value-precision="2" wants-focus="true" wheel-inc-value="0.1"/>
-		<view angle-range="270" angle-start="135" bitmap="ST_knob_Phase_lll_50x50_128f" class="CAnimKnob" control-tag="CompressorLook-Aheaad" default-value="0.0666667" height-of-one-image="50" inverse-bitmap="false" max-value="1" min-value="0" mouse-enabled="true" opacity="1" origin="170, 690" size="50, 50" sub-pixmaps="128" transparent="false" value-inset="0" wants-focus="false" wheel-inc-value="0.1" zoom-factor="1.5"/>
+		<view back-color="~ BlackCColor" background-offset="0, 0" class="CTextEdit" control-tag="CompressorLook-Ahead" default-value="0.0666667" font="~ NormalFontSmall" font-antialias="true" font-color="~ WhiteCColor" frame-color="~ GreyCColor" frame-width="1" immediate-text-change="false" max-value="1" min-value="0" mouse-enabled="true" opacity="1" origin="165, 740" round-rect-radius="6" secure-style="false" shadow-color="~ BlackCColor" size="60, 18" style-3D-in="false" style-3D-out="false" style-doubleclick="false" style-no-draw="false" style-no-frame="false" style-no-text="false" style-round-rect="true" style-shadow-text="false" text-alignment="center" text-inset="5, 0" text-rotation="0" text-shadow-offset="1, 1" title="1.00" transparent="false" value-precision="2" wants-focus="true" wheel-inc-value="0.1"/>
+		<view angle-range="270" angle-start="135" bitmap="ST_knob_Phase_lll_50x50_128f" class="CAnimKnob" control-tag="CompressorLook-Ahead" default-value="0.0666667" height-of-one-image="50" inverse-bitmap="false" max-value="1" min-value="0" mouse-enabled="true" opacity="1" origin="170, 690" size="50, 50" sub-pixmaps="128" transparent="false" value-inset="0" wants-focus="false" wheel-inc-value="0.1" zoom-factor="1.5"/>
 		<view back-color="~ BlackCColor" background-offset="0, 0" class="CTextLabel" default-value="0.5" font="~ NormalFont" font-antialias="true" font-color="~ WhiteCColor" frame-color="~ BlackCColor" frame-width="1" max-value="1" min-value="0" mouse-enabled="true" opacity="1" origin="155, 670" round-rect-radius="6" shadow-color="~ BlackCColor" size="80, 18" style-3D-in="false" style-3D-out="false" style-no-draw="false" style-no-frame="false" style-no-text="false" style-round-rect="false" style-shadow-text="false" text-alignment="center" text-inset="5, 0" text-rotation="0" text-shadow-offset="1, 1" title="Look-Ahead" transparent="true" value-precision="2" wants-focus="false" wheel-inc-value="0.1"/>
+		<view bitmap="indicator" class="CMovieButton" control-tag="DeEsserAct" default-value="0" height-of-one-image="16" max-value="1" min-value="0" mouse-enabled="false" opacity="1" origin="120, 47" size="16, 16" sub-pixmaps="2" transparent="false" wants-focus="true" wheel-inc-value="0.1"/>
 	</template>
 	<variables/>
 	<custom>
 		<attributes color="Focus" enabled="true" name="FocusDrawing" width="1"/>
 		<attributes Grids="1x 1,5x 5,10x 10,12x 12,15x 15" Size="5, 5" name="UIGridController"/>
 		<attributes SelectedTemplate="view" name="UITemplateController"/>
-		<attributes EditViewScale="1" EditorSize="0, 0, 882, 1204" SplitViewSize_0_0="0.7894736842105263274760318381595425307751" SplitViewSize_0_1="0.193548387096774188176340203426661901176" SplitViewSize_1_0="0.5229202037351443621560065366793423891068" SplitViewSize_1_1="0.472835314091680836146025512789492495358" SplitViewSize_2_0="0.636054421768707523021646466077072545886" SplitViewSize_2_1="0.3582766439909297329080573035753332078457" TabSwitchValue="4" Version="1" name="UIEditController"/>
+		<attributes EditViewScale="1" EditorSize="0, 0, 882, 1204" SplitViewSize_0_0="0.7894736842105263274760318381595425307751" SplitViewSize_0_1="0.193548387096774188176340203426661901176" SplitViewSize_1_0="0.5229202037351443621560065366793423891068" SplitViewSize_1_1="0.472835314091680836146025512789492495358" SplitViewSize_2_0="0.636054421768707523021646466077072545886" SplitViewSize_2_1="0.3582766439909297329080573035753332078457" TabSwitchValue="0" Version="1" name="UIEditController"/>
 		<attributes name="UIAttributesController"/>
-		<attributes SelectedRow="8" name="UIViewCreatorDataSource"/>
-		<attributes SelectedRow="3" name="UIBitmapsDataSource"/>
+		<attributes SelectedRow="11" name="UIViewCreatorDataSource"/>
+		<attributes SelectedRow="5" name="UIBitmapsDataSource"/>
 		<attributes Path="/Users/hbp/repos/vst-dev/DiaPro/resource/editor.uidesc" name="VST3Editor"/>
 		<attributes SelectedRow="2" name="UITagsDataSource"/>
 		<attributes SelectedRow="0" name="UIColorsDataSource"/>
@@ -80,34 +81,37 @@
 		<bitmap name="background" path="background.png"/>
 		<bitmap name="gr_off" path="gr_off.png"/>
 		<bitmap name="gr_on" path="gr_on.png"/>
+		<bitmap name="indicator" path="indicator.png"/>
+		<bitmap name="indicator_rc" path="indicator_rc.png"/>
 		<bitmap name="switch" path="switch.png"/>
 		<bitmap name="vu_off" path="vu_off.png"/>
 		<bitmap name="vu_on" path="vu_on.png"/>
 	</bitmaps>
 	<control-tags>
 		<control-tag name="Bypass" tag="0"/>
+		<control-tag name="CompGrMeter0" tag="16"/>
+		<control-tag name="CompGrMeter1" tag="17"/>
+		<control-tag name="CompressorAttack" tag="7"/>
+		<control-tag name="CompressorKnee" tag="10"/>
+		<control-tag name="CompressorLook-Ahead" tag="13"/>
+		<control-tag name="CompressorMakeupGain" tag="11"/>
+		<control-tag name="CompressorMix" tag="12"/>
+		<control-tag name="CompressorRatio" tag="9"/>
+		<control-tag name="CompressorRelease" tag="8"/>
+		<control-tag name="CompressorStereoLink" tag="14"/>
+		<control-tag name="CompressorThreshold" tag="6"/>
+		<control-tag name="De-esserDrive" tag="20"/>
+		<control-tag name="De-esserFreq" tag="19"/>
+		<control-tag name="De-esserThreshold" tag="18"/>
+		<control-tag name="DeEsserAct" tag="22"/>
+		<control-tag name="EnableCompressor" tag="15"/>
+		<control-tag name="EnableDe-Esser" tag="21"/>
+		<control-tag name="Gain" tag="5"/>
+		<control-tag name="UI::SendMessage" tag="1000"/>
 		<control-tag name="VuPPMIn0" tag="1"/>
 		<control-tag name="VuPPMIn1" tag="2"/>
 		<control-tag name="VuPPMOut0" tag="3"/>
 		<control-tag name="VuPPMOut1" tag="4"/>
-		<control-tag name="Gain" tag="5"/>
-		<control-tag name="CompressorThreshold" tag="6"/>
-		<control-tag name="CompressorAttack" tag="7"/>
-		<control-tag name="CompressorRelease" tag="8"/>
-		<control-tag name="CompressorRatio" tag="9"/>
-		<control-tag name="CompressorKnee" tag="10"/>
-		<control-tag name="CompressorMakeupGain" tag="11"/>
-		<control-tag name="CompressorMix" tag="12"/>
-		<control-tag name="CompressorLook-Aheaad" tag="13"/>
-		<control-tag name="CompressorStereoLink" tag="14"/>
-		<control-tag name="EnableCompressor" tag="15"/>
-		<control-tag name="CompGrMeter0" tag="16"/>
-		<control-tag name="CompGrMeter1" tag="17"/>
-		<control-tag name="De-esserThreshold" tag="18"/>
-		<control-tag name="De-esserFreq" tag="19"/>
-		<control-tag name="De-esserDrive" tag="20"/>
-		<control-tag name="EnableDe-Esser" tag="21"/>
-		<control-tag name="UI::SendMessage" tag="1000"/>
 	</control-tags>
 	<gradients>
 		<gradient name="Default TextButton Gradient">

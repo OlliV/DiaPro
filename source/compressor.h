@@ -49,8 +49,6 @@ public:
         lookahead = COMP_LOOKAHEAD_DEFAULT_N;
     };
 
-    SampleType gr_meter[2];
-
     /*
      * Normalized parameters tuned directly by the user.
      */
@@ -64,6 +62,8 @@ public:
     SampleType lookahead; // Used to tune the delay line
     bool stereo_link = false;
     bool enabled = true;
+
+    SampleType gr_meter[2];
 
     void updateParams(float sampleRate);
     void reset(void);

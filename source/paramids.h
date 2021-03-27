@@ -86,5 +86,6 @@ enum {
     kDeEsserFreqId,
     kDeEsserDriveId,
     kDeEsserEnabledId,
+    kDeEsserActId,
     kNrParams
 };

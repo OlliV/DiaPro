@@ -365,6 +365,11 @@ tresult PLUGIN_API DiaProProcessor::process (Vst::ProcessData& data)
         if (paramQueue) {
             paramQueue->addPoint(0, (data.symbolicSampleSize == kSample32) ? comp32.gr_meter[1] : comp64.gr_meter[1], index);
         }
+
+        paramQueue = outParamChanges->addParameterData(kDeEsserActId, index);
+        if (paramQueue) {
+            paramQueue->addPoint(0, (data.symbolicSampleSize == kSample32) ? (Sample32)dees32.act : (Sample64)dees64.act, index);
+        }
     }
     memcpy(fVuPPMInOld, fVuPPMIn, sizeof(fVuPPMInOld));
     memcpy(fVuPPMOutOld, fVuPPMOut, sizeof(fVuPPMOutOld));
@@ -520,7 +525,6 @@ tresult PLUGIN_API DiaProProcessor::setState (IBStream* state)
     dees64.freq = savedDeEsserFreq;
     dees64.drive = savedDeEsserDrive;
     dees64.enabled = savedDeEsserEnabled;
-    dees32.updateParams(sampleRate);
     dees64.updateParams(sampleRate);
 
 	return kResultOk;

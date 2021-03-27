@@ -208,6 +208,8 @@ tresult PLUGIN_API DiaProController::initialize (FUnknown* context)
                             1, // unitID
                             STR16("Enable")); // shortTitle
 
+    // De-esser act led
+    parameters.addParameter(STR16("DeEsserAct"), nullptr, 0, 0, ParameterInfo::kIsReadOnly, kDeEsserActId);
 
     // Output Gain parameter
     param = new GainParameter("Gain", ParameterInfo::kCanAutomate, kGainId, GAIN_MIN, GAIN_MAX);

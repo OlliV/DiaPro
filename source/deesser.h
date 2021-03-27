@@ -34,6 +34,8 @@ public:
     SampleType drive;
     bool enabled = true;
 
+    SampleType act;
+
     void updateParams(float sampleRate);
     void reset(void);
     void process(SampleType** inOut, int nrChannels, int nrSamples);
@@ -67,13 +69,14 @@ void DeEsser<SampleType>::updateParams(float sampleRate)
     cooked.att = 0.010f;
     cooked.rel = 0.992f;
     cooked.fil = 0.050f + 0.94f * freq * freq;
-    cooked.gai = pow(10.0f, 2.0f * drive - 1.0f);
+    cooked.gai = 1.0f - normdb2factor(drive, DEESSER_DRIVE_MIN, DEESSER_DRIVE_MAX);
 }
 
 template <typename SampleType>
 void DeEsser<SampleType>::reset(void)
 {
     proc.env = proc.fbuf1 = proc.fbuf2 = 0.0f;
+    act = 0.0f;
 }
 
 template <typename SampleType>
@@ -110,8 +113,16 @@ void DeEsser<SampleType>::process(SampleType **inOut, int nrChannels, int nrSamp
         en = (tmp > en) ? en + at * (tmp - en) : en * re; // envelope
         if (en > th) {
             g = f1 + f2 + tmp * (th / en);
+
+            act = 1.0f;
         } else {
             g = f1 + f2 + tmp; // limit
+            //g = 0.5f * (a + b);
+
+            act *= 0.8f;
+            if (act < 0.1f) {
+                act = 0.0f;
+            }
         }
 
         //brackets for full-band!!!
