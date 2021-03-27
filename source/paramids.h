@@ -34,6 +34,9 @@
 #define COMP_MAKEUP_MAX         20.0f
 #define COMP_MAKEUP_DEFAULT_N   0.375f
 #define COMP_MIX_DEFAULT_N      1.0f
+#define COMP_LOOKAHEAD_MIN      0.0f
+#define COMP_LOOKAHEAD_MAX      15.0f
+#define COMP_LOOKAHEAD_DEFAULT_N NORM(1.0f, COMP_LOOKAHEAD_MIN, COMP_LOOKAHEAD_MAX)
 #define DEESSER_THRESH_MIN         -60.0f
 #define DEESSER_THRESH_MAX          60.0f
 #define DEESSER_THRESH_DEFAULT_N    0.15f
@@ -74,6 +77,7 @@ enum {
     kCompKneeId,
     kCompMakeupId,
     kCompMixId,
+    kCompLookAheadId,
     kCompStereoLinkId,
     kCompEnabledId,
     kCompGrMeter0Id,

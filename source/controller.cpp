@@ -156,6 +156,12 @@ tresult PLUGIN_API DiaProController::initialize (FUnknown* context)
     parameters.addParameter(param);
 	param->setUnitID(1);
 
+    // Comp look-ahead
+	param = new Steinberg::Vst::mda::ScaledParameter(USTRING("Compressor Look-Ahead"), USTRING("msec"), 0, COMP_LOOKAHEAD_DEFAULT_N, ParameterInfo::kCanAutomate, kCompLookAheadId, COMP_LOOKAHEAD_MIN, COMP_LOOKAHEAD_MAX);
+    param->setNormalized(COMP_LOOKAHEAD_DEFAULT_N);
+    parameters.addParameter(param);
+	param->setUnitID(1);
+
     // Comp stereo link
     parameters.addParameter(STR16("Compressor Stereo Link"), // title
                             STR16("On/Off"), // units
@@ -256,6 +262,7 @@ tresult PLUGIN_API DiaProController::setComponentState (IBStream* state)
     float savedCompKnee;
     float savedCompMakeup;
     float savedCompMix;
+    float savedCompLookAhead;
     int32 savedCompStereoLink;
     int32 savedCompEnabled;
     float savedDeEsserThresh;
@@ -272,6 +279,7 @@ tresult PLUGIN_API DiaProController::setComponentState (IBStream* state)
         !streamer.readFloat(savedCompKnee) ||
         !streamer.readFloat(savedCompMakeup) ||
         !streamer.readFloat(savedCompMix) ||
+        !streamer.readFloat(savedCompLookAhead) ||
         !streamer.readInt32(savedCompStereoLink) ||
         !streamer.readInt32(savedCompEnabled) ||
         !streamer.readFloat(savedDeEsserThresh) ||
@@ -291,6 +299,7 @@ tresult PLUGIN_API DiaProController::setComponentState (IBStream* state)
     setParamNormalized(kCompKneeId, savedCompKnee);
     setParamNormalized(kCompMakeupId, savedCompMakeup);
     setParamNormalized(kCompMixId, savedCompMix);
+    setParamNormalized(kCompLookAheadId, savedCompLookAhead);
     setParamNormalized(kCompStereoLinkId, savedCompStereoLink ? 1 : 0);
     setParamNormalized(kCompEnabledId, savedCompEnabled ? 1 : 0);
     setParamNormalized(kDeEsserThreshId, savedDeEsserThresh);

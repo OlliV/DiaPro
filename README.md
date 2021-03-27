@@ -42,6 +42,29 @@ The gain applied to the sibilances.
 
 ## Compressor
 
+
+```
+                                                               |\
+                                    +------------------------->|.x>-----\     *
+                                    |                          |/         >*     *
+                                    |   | \        | \         |          *  SUM  *---> y(n)
+          +----------------------+  |   |    \     |   \       |\         >*     *
+x(n) -+-->|         Z^-D         |--+-->| DCA >--->|    >----->|.y>-----/     *
+      |   +----------------------+      |    /     |   /       |/  
+      |              |                  | /        | /         |
+      |          look-ahead              |          |          |
+      |                                  |          |          |
+      |   +-------+      +-------+       |          |          |
+      |   |  RMS  |      | Gain  |       |          |          |
+      +-->|  Det  |----->| Calc  |-------+          |          |
+          | =det  |      | =gr   |                  |          |
+          +-------+      +-------+                  |          |
+            |   |          | | |                    |          |
+           att rel         t k n                 makeup       mix
+                           h n :                   
+                           r e 1
+```
+
 **Presets for lazy people**
 
 | Use case    | Ratio    | Knee | Attack [ms] | Release [ms] | Mix  | 
@@ -92,6 +115,13 @@ Determines how fast the compressor backs off when the signal level goes down.
 Increases the output level to compensate the overall signal level reduction.
 Typically makeup gain should be adjust the so that the output level is
 approximately the same as the input level.
+
+**Look-Ahead [ms]**
+
+The compressor look-ahead delay line length in ms. The delay line allows to
+compensate the lag of the detector and thus adjusting the gain reduction of the
+output at the right time and not just after the signal already has hit the
+threshold.
 
 **Mix**
 

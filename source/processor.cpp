@@ -165,6 +165,14 @@ void DiaProProcessor::handleParamChanges(IParameterChanges* paramChanges)
                         }
                         break;
 
+                    case kCompLookAheadId:
+                        if (paramQueue->getPoint(numPoints - 1, sampleOffset, value) == kResultTrue) {
+                            comp32.lookahead = value;
+                            comp64.lookahead = value;
+                            compChanged = true;
+                        }
+                        break;
+
                     case kCompStereoLinkId:
                         if (paramQueue->getPoint(numPoints - 1, sampleOffset, value) == kResultTrue) {
                             comp32.stereo_link = value > 0.5f;
@@ -445,6 +453,7 @@ tresult PLUGIN_API DiaProProcessor::setState (IBStream* state)
     float savedCompKnee = 0;
     float savedCompMakeup = 0;
     float savedCompMix = 0;
+    float savedCompLookAhead = 0;
     int32 savedCompStereoLink = 0;
     int32 savedCompEnabled = 0;
     float savedDeEsserThresh = 0;
@@ -461,6 +470,7 @@ tresult PLUGIN_API DiaProProcessor::setState (IBStream* state)
         !streamer.readFloat(savedCompKnee) ||
         !streamer.readFloat(savedCompMakeup) ||
         !streamer.readFloat(savedCompMix) ||
+        !streamer.readFloat(savedCompLookAhead) ||
         !streamer.readInt32(savedCompStereoLink) ||
         !streamer.readInt32(savedCompEnabled) ||
         !streamer.readFloat(savedDeEsserThresh) ||
@@ -483,6 +493,7 @@ tresult PLUGIN_API DiaProProcessor::setState (IBStream* state)
     comp32.knee = savedCompKnee;
     comp32.makeup = savedCompMakeup;
     comp32.mix = savedCompMix;
+    comp32.lookahead = savedCompLookAhead;
     comp32.stereo_link = savedCompStereoLink;
     comp32.enabled = savedCompEnabled;
     comp32.updateParams(sampleRate);
@@ -494,6 +505,7 @@ tresult PLUGIN_API DiaProProcessor::setState (IBStream* state)
     comp64.knee = savedCompKnee;
     comp64.makeup = savedCompMakeup;
     comp64.mix = savedCompMix;
+    comp64.lookahead = savedCompLookAhead;
     comp64.stereo_link = savedCompStereoLink;
     comp64.enabled = savedCompEnabled;
     comp64.updateParams(sampleRate);

@@ -47,8 +47,10 @@ public:
                                                       Steinberg::int32 numIns,
                                                       Steinberg::Vst::SpeakerArrangement* outputs,
                                                       Steinberg::int32 numOuts) SMTG_OVERRIDE;
-
-	/** Here we go...the process call */
+    Steinberg::uint32 PLUGIN_API getLatencySamples() override
+    {
+        return comp32.get_nlookahead();
+    }
 	Steinberg::tresult PLUGIN_API process (Steinberg::Vst::ProcessData& data) SMTG_OVERRIDE;
 
 	/** For persistence */

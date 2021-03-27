@@ -29,6 +29,7 @@
 
 #include <algorithm>
 #include "paramids.h"
+#include "delay.h"
 
 namespace MyVst {
 using namespace Steinberg::Vst;
@@ -45,9 +46,10 @@ public:
         knee = COMP_KNEE_DEFAULT_N;
         makeup = COMP_MAKEUP_DEFAULT_N;
         mix = COMP_MIX_DEFAULT_N;
+        lookahead = COMP_LOOKAHEAD_DEFAULT_N;
     };
 
-    SampleType gr_meter[2]; // TODO use for visual
+    SampleType gr_meter[2];
 
     /*
      * Normalized parameters tuned directly by the user.
@@ -59,11 +61,16 @@ public:
     SampleType knee; // 0.0..1.0
     SampleType makeup;
     SampleType mix; // mix original and compressed 0.0..1.0
+    SampleType lookahead; // Used to tune the delay line
     bool stereo_link = false;
     bool enabled = true;
 
     void updateParams(float sampleRate);
     void reset(void);
+    unsigned get_nlookahead(void)
+    {
+        return cooked.nlookahead;
+    }
     void process(SampleType** inOut, int nrChannels, int nrSamples);
 private:
 
@@ -77,6 +84,7 @@ private:
         SampleType cthreshv;
         SampleType ratio;
         SampleType cmakeup;
+        unsigned nlookahead;
         SampleType gr_meter_decay;
     } cooked;
 
@@ -84,6 +92,7 @@ private:
      * Per channel process variables.
      */
     struct proc {
+        Delay <SampleType, 100> delay;
         SampleType runave;
     } proc[2];
 
@@ -95,18 +104,26 @@ private:
 template <typename SampleType>
 void Compressor<SampleType>::updateParams(float sampleRate)
 {
-    cooked.atcoef = exp(-1.0f / (attime * sampleRate));
-    cooked.relcoef = exp(-1.0f / (reltime * sampleRate));
+    cooked.atcoef = exp(-1.0f / ((PLAIN(attime, COMP_ATTIME_MIN, COMP_ATTIME_MAX) / 1000.0f) * sampleRate));
+    cooked.relcoef = exp(-1.0f / ((PLAIN(reltime, COMP_RELTIME_MIN, COMP_RELTIME_MAX) / 1000.0f) * sampleRate));
     cooked.ratio = PLAIN(ratio, COMP_RATIO_MIN, COMP_RATIO_MAX);
     cooked.cthresh_db = norm2db(thresh, COMP_THRESH_MIN, COMP_THRESH_MAX);
     cooked.cthreshv = exp(cooked.cthresh_db * DB2LOG);
     cooked.cmakeup = normdb2factor(makeup, COMP_MAKEUP_MIN, COMP_MAKEUP_MAX);
+
+    unsigned nlookahead = (unsigned)(PLAIN(lookahead, COMP_LOOKAHEAD_MIN, COMP_LOOKAHEAD_MAX) * sampleRate);
+    proc[0].delay.set_len(nlookahead);
+    proc[1].delay.set_len(nlookahead);
+    cooked.nlookahead = nlookahead;
+
     cooked.gr_meter_decay = exp(1.0f / (1.0f * sampleRate));
 }
 
 template <typename SampleType>
 void Compressor<SampleType>::reset(void)
 {
+    proc[0].delay.reset();
+    proc[1].delay.reset();
     proc[0].runave = 0;
     proc[1].runave = 0;
     gr_meter[0] = 1.0f;
@@ -190,8 +207,10 @@ void Compressor<SampleType>::process(SampleType** inOut, int nrChannels, int nrS
             if (enabled) {
                 update_gr_meter(0, gr);
                 update_gr_meter(1, gr);
-                inOut[0][i] = xnl * gr * cooked.cmakeup * mix + xnl * (1.0f - mix);
-                inOut[1][i] = xnr * gr * cooked.cmakeup * mix + xnr * (1.0f - mix);
+                SampleType xnl_dl = proc[0].delay.process(xnl);
+                SampleType xnr_dl = proc[1].delay.process(xnr);
+                inOut[0][i] = xnl_dl * gr * cooked.cmakeup * mix + xnl_dl * (1.0f - mix);
+                inOut[1][i] = xnr_dl * gr * cooked.cmakeup * mix + xnr_dl * (1.0f - mix);
             } else {
                 update_gr_meter(0, 1.0f);
                 update_gr_meter(1, 1.0f);
@@ -215,7 +234,8 @@ void Compressor<SampleType>::process(SampleType** inOut, int nrChannels, int nrS
                  */
                 if (enabled) {
                     update_gr_meter(ch, gr);
-                    *pSample++ = s * gr * cooked.cmakeup * mix + s * (1.0f - mix);
+                    SampleType xn_dl = p->delay.process(s);
+                    *pSample++ = xn_dl * gr * cooked.cmakeup * mix + xn_dl * (1.0f - mix);
                 } else {
                     update_gr_meter(ch, 1.0f);
                     pSample++;
