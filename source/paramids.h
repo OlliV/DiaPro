@@ -34,6 +34,15 @@
 #define COMP_MAKEUP_MAX         20.0f
 #define COMP_MAKEUP_DEFAULT_N   0.375f
 #define COMP_MIX_DEFAULT_N      1.0f
+#define DEESSER_THRESH_MIN         -60.0f
+#define DEESSER_THRESH_MAX          60.0f
+#define DEESSER_THRESH_DEFAULT_N    0.15f
+#define DEESSER_FREQ_MIN            1000.0f
+#define DEESSER_FREQ_MAX            11100.0f
+#define DEESSER_FREQ_DEFAULT_N      0.60f
+#define DEESSER_DRIVE_MIN          -20.0f
+#define DEESSER_DRIVE_MAX           20.0f
+#define DEESSER_DRIVE_DEFAULT_N     0.50f
 
 static inline float db2norm(float db, float min, float max)
 {
@@ -65,9 +74,13 @@ enum {
     kCompKneeId,
     kCompMakeupId,
     kCompMixId,
-    kCompStereoLink,
-    kCompEnabled,
+    kCompStereoLinkId,
+    kCompEnabledId,
     kCompGrMeter0Id,
     kCompGrMeter1Id,
+    kDeEsserThreshId,
+    kDeEsserFreqId,
+    kDeEsserDriveId,
+    kDeEsserEnabledId,
     kNrParams
 };

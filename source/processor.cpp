@@ -60,8 +60,13 @@ tresult PLUGIN_API DiaProProcessor::setActive (TBool state)
     if (state) {
         float sampleRate = (float)this->processSetup.sampleRate;
 
+        dees32.updateParams(sampleRate);
+        dees32.reset();
         comp32.updateParams(sampleRate);
         comp32.reset();
+
+        dees64.updateParams(sampleRate);
+        dees64.reset();
         comp64.updateParams(sampleRate);
         comp64.reset();
     }
@@ -86,8 +91,15 @@ void DiaProProcessor::handleParamChanges(IParameterChanges* paramChanges)
                 int32 sampleOffset;
                 int32 numPoints = paramQueue->getPointCount();
                 bool compChanged = false;
+                bool deesChanged = false;
 
                 switch (paramQueue->getParameterId ()) {
+                    case kBypassId:
+                        if (paramQueue->getPoint (numPoints - 1, sampleOffset, value) == kResultTrue) {
+                            bBypass = value > 0.5f;
+                        }
+                        break;
+
                     case kGainId:
                         // we use in this example only the last point of the queue.
                         // in some wanted case for specific kind of parameter it makes sense to
@@ -153,23 +165,48 @@ void DiaProProcessor::handleParamChanges(IParameterChanges* paramChanges)
                         }
                         break;
 
-                    case kCompStereoLink:
+                    case kCompStereoLinkId:
                         if (paramQueue->getPoint(numPoints - 1, sampleOffset, value) == kResultTrue) {
                             comp32.stereo_link = value > 0.5f;
                             comp64.stereo_link = value > 0.5f;
                         }
                         break;
 
-                    case kCompEnabled:
+                    case kCompEnabledId:
                         if (paramQueue->getPoint(numPoints - 1, sampleOffset, value) == kResultTrue) {
                             comp32.enabled = value > 0.5f;
                             comp64.enabled = value > 0.5f;
                         }
                         break;
 
-                    case kBypassId:
-                        if (paramQueue->getPoint (numPoints - 1, sampleOffset, value) == kResultTrue) {
-                            bBypass = value > 0.5f;
+                    case kDeEsserThreshId:
+                        if (paramQueue->getPoint(numPoints - 1, sampleOffset, value) == kResultTrue) {
+                            dees32.thresh = value;
+                            dees64.thresh = value;
+                            deesChanged = true;
+                        }
+                        break;
+
+                    case kDeEsserFreqId:
+                        if (paramQueue->getPoint(numPoints - 1, sampleOffset, value) == kResultTrue) {
+                            dees32.freq = value;
+                            dees64.freq = value;
+                            deesChanged = true;
+                        }
+                        break;
+
+                    case kDeEsserDriveId:
+                        if (paramQueue->getPoint(numPoints - 1, sampleOffset, value) == kResultTrue) {
+                            dees32.drive = value;
+                            dees64.drive = value;
+                            deesChanged = true;
+                        }
+                        break;
+
+                    case kDeEsserEnabledId:
+                        if (paramQueue->getPoint(numPoints - 1, sampleOffset, value) == kResultTrue) {
+                            dees32.enabled = value > 0.5f;
+                            dees64.enabled = value > 0.5f;
                         }
                         break;
                 }
@@ -178,6 +215,12 @@ void DiaProProcessor::handleParamChanges(IParameterChanges* paramChanges)
 
                     comp32.updateParams(sampleRate);
                     comp64.updateParams(sampleRate);
+                }
+                if (deesChanged) {
+                    float sampleRate = (float)this->processSetup.sampleRate;
+
+                    dees32.updateParams(sampleRate);
+                    dees64.updateParams(sampleRate);
                 }
             }
         }
@@ -258,6 +301,7 @@ tresult PLUGIN_API DiaProProcessor::process (Vst::ProcessData& data)
         processVuPPM<Sample32>((Sample32**)in, fVuPPMIn, nrChannels, data.numSamples);
 
         if (!bBypass) {
+            dees32.process((Sample32**)out, nrChannels, data.numSamples);
             comp32.process((Sample32**)out, nrChannels, data.numSamples);
             processGain<Sample32>((Sample32**)out, nrChannels, data.numSamples, fGain);
         }
@@ -267,6 +311,7 @@ tresult PLUGIN_API DiaProProcessor::process (Vst::ProcessData& data)
         processVuPPM<Sample64>((Sample64**)in, fVuPPMIn, nrChannels, data.numSamples);
 
         if (!bBypass) {
+            dees64.process((Sample64**)out, nrChannels, data.numSamples);
             comp64.process((Sample64**)out, nrChannels, data.numSamples);
             processGain<Sample64>((Sample64**)out, nrChannels, data.numSamples, fGain);
         }
@@ -402,6 +447,10 @@ tresult PLUGIN_API DiaProProcessor::setState (IBStream* state)
     float savedCompMix = 0;
     int32 savedCompStereoLink = 0;
     int32 savedCompEnabled = 0;
+    float savedDeEsserThresh = 0;
+    float savedDeEsserFreq = 0;
+    float savedDeEsserDrive = 0;
+    int32 savedDeEsserEnabled = 0;
 
     if (!streamer.readInt32(savedBypass) ||
         !streamer.readFloat(savedGain) ||
@@ -413,8 +462,12 @@ tresult PLUGIN_API DiaProProcessor::setState (IBStream* state)
         !streamer.readFloat(savedCompMakeup) ||
         !streamer.readFloat(savedCompMix) ||
         !streamer.readInt32(savedCompStereoLink) ||
-        !streamer.readInt32(savedCompEnabled)
-        ) {
+        !streamer.readInt32(savedCompEnabled) ||
+        !streamer.readFloat(savedDeEsserThresh) ||
+        !streamer.readFloat(savedDeEsserFreq) ||
+        !streamer.readFloat(savedDeEsserDrive) ||
+        !streamer.readInt32(savedDeEsserEnabled)
+    ) {
             return kResultFalse;
     }
 
@@ -444,6 +497,19 @@ tresult PLUGIN_API DiaProProcessor::setState (IBStream* state)
     comp64.stereo_link = savedCompStereoLink;
     comp64.enabled = savedCompEnabled;
     comp64.updateParams(sampleRate);
+
+    dees32.thresh = savedDeEsserThresh;
+    dees32.freq = savedDeEsserFreq;
+    dees32.drive = savedDeEsserDrive;
+    dees32.enabled = savedDeEsserEnabled;
+    dees32.updateParams(sampleRate);
+
+    dees64.thresh = savedDeEsserThresh;
+    dees64.freq = savedDeEsserFreq;
+    dees64.drive = savedDeEsserDrive;
+    dees64.enabled = savedDeEsserEnabled;
+    dees32.updateParams(sampleRate);
+    dees64.updateParams(sampleRate);
 
 	return kResultOk;
 }

@@ -7,6 +7,7 @@
 #include "public.sdk/source/vst/vstaudioeffect.h"
 #include "paramids.h"
 #include "compressor.h"
+#include "deesser.h"
 
 namespace MyVst {
 
@@ -73,6 +74,8 @@ protected:
      */
 	float fGain = GAIN_DEFAULT_N;
 
+    DeEsser    <Sample32> dees32;
+    DeEsser    <Sample64> dees64;
     Compressor <Sample32> comp32;
     Compressor <Sample64> comp64;
 

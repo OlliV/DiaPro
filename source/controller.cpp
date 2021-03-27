@@ -116,53 +116,53 @@ tresult PLUGIN_API DiaProController::initialize (FUnknown* context)
     Parameter *param;
 
     // Comp thresh
-    param = new GainParameter("Threshold", ParameterInfo::kCanAutomate, kCompThreshId, COMP_THRESH_MIN, COMP_THRESH_MAX);
+    param = new GainParameter("Compressor Threshold", ParameterInfo::kCanAutomate, kCompThreshId, COMP_THRESH_MIN, COMP_THRESH_MAX);
     param->setNormalized(COMP_THRESH_DEFAULT_N);
     parameters.addParameter(param);
     param->setUnitID(1);
 
     // Comp ratio
-    param = new Steinberg::Vst::mda::ScaledParameter(USTRING("Ratio"), USTRING(":1"), 0, COMP_RATIO_DEFAULT_N, ParameterInfo::kCanAutomate, kCompRatioId, COMP_RATIO_MIN, COMP_RATIO_MAX);
+    param = new Steinberg::Vst::mda::ScaledParameter(USTRING("Compressor Ratio"), USTRING(":1"), 0, COMP_RATIO_DEFAULT_N, ParameterInfo::kCanAutomate, kCompRatioId, COMP_RATIO_MIN, COMP_RATIO_MAX);
     param->setNormalized(COMP_RATIO_DEFAULT_N);
     parameters.addParameter(param);
     param->setUnitID(1);
 
     // Comp knee
-	param = new Steinberg::Vst::mda::ScaledParameter(USTRING("Knee"), USTRING(""), 0, COMP_KNEE_DEFAULT_N, ParameterInfo::kCanAutomate, kCompKneeId, COMP_KNEE_MIN, COMP_KNEE_MAX);
+	param = new Steinberg::Vst::mda::ScaledParameter(USTRING("Compressor Knee"), USTRING(""), 0, COMP_KNEE_DEFAULT_N, ParameterInfo::kCanAutomate, kCompKneeId, COMP_KNEE_MIN, COMP_KNEE_MAX);
     param->setNormalized(COMP_KNEE_DEFAULT_N);
     parameters.addParameter(param);
 	param->setUnitID(1);
 
     // Comp attack
-	param = new Steinberg::Vst::mda::ScaledParameter(USTRING("Attack"), USTRING("usec"), 0, COMP_ATTIME_DEFAULT_N, ParameterInfo::kCanAutomate, kCompAttimeId, COMP_ATTIME_MIN, COMP_ATTIME_MAX);
+	param = new Steinberg::Vst::mda::ScaledParameter(USTRING("Compressor Attack"), USTRING("msec"), 0, COMP_ATTIME_DEFAULT_N, ParameterInfo::kCanAutomate, kCompAttimeId, COMP_ATTIME_MIN, COMP_ATTIME_MAX);
     param->setNormalized(COMP_ATTIME_DEFAULT_N);
     parameters.addParameter(param);
 	param->setUnitID(1);
 
     // Comp release
-	param = new Steinberg::Vst::mda::ScaledParameter(USTRING("Release"), USTRING("msec"), 0, COMP_RELTIME_DEFAULT_N, ParameterInfo::kCanAutomate, kCompReltimeId, COMP_RELTIME_MIN, COMP_RELTIME_MAX);
+	param = new Steinberg::Vst::mda::ScaledParameter(USTRING("Compressor Release"), USTRING("msec"), 0, COMP_RELTIME_DEFAULT_N, ParameterInfo::kCanAutomate, kCompReltimeId, COMP_RELTIME_MIN, COMP_RELTIME_MAX);
     param->setNormalized(COMP_RELTIME_DEFAULT_N);
     parameters.addParameter(param);
 	param->setUnitID(1);
 
     // Comp gain parameter
-    param = new GainParameter("Makeup Gain", ParameterInfo::kCanAutomate, kCompMakeupId, COMP_MAKEUP_MIN, COMP_MAKEUP_MAX);
+    param = new GainParameter("Compressor Makeup Gain", ParameterInfo::kCanAutomate, kCompMakeupId, COMP_MAKEUP_MIN, COMP_MAKEUP_MAX);
     parameters.addParameter(param);
     param->setUnitID(1);
 
     // Comp mix
-	param = new Steinberg::Vst::mda::ScaledParameter(USTRING("Mix"), USTRING(":1"), 0.0f, 1.0f, ParameterInfo::kCanAutomate, kCompMixId);
+	param = new Steinberg::Vst::mda::ScaledParameter(USTRING("Compressor Mix"), USTRING(":1"), 0.0f, 1.0f, ParameterInfo::kCanAutomate, kCompMixId);
     param->setNormalized(COMP_MIX_DEFAULT_N);
     parameters.addParameter(param);
 	param->setUnitID(1);
 
     // Comp stereo link
-    parameters.addParameter(STR16("Stereo Link"), // title
+    parameters.addParameter(STR16("Compressor Stereo Link"), // title
                             STR16("On/Off"), // units
                             stepCountToggle,
                             0, // defaultNormalizedValue
                             Vst::ParameterInfo::kCanAutomate, // flags
-                            kCompStereoLink, // tag
+                            kCompStereoLinkId, // tag
                             1, // unitID
                             STR16("Stereo Link")); // shortTitle
 
@@ -172,9 +172,36 @@ tresult PLUGIN_API DiaProController::initialize (FUnknown* context)
                             stepCountToggle,
                             1, // defaultNormalizedValue
                             Vst::ParameterInfo::kCanAutomate, // flags
-                            kCompEnabled, // tag
+                            kCompEnabledId, // tag
                             1, // unitID
                             STR16("Enable")); // shortTitle
+
+    // De-esser threshold
+    param = new GainParameter("De-esser Threshold", ParameterInfo::kCanAutomate, kDeEsserThreshId, DEESSER_THRESH_MIN, DEESSER_THRESH_MAX);
+    parameters.addParameter(param);
+    param->setUnitID(2);
+
+    // De-esser freq
+	param = new Steinberg::Vst::mda::ScaledParameter(USTRING("De-esser Freq"), USTRING("Hz"), 0, DEESSER_FREQ_DEFAULT_N, ParameterInfo::kCanAutomate, kDeEsserFreqId, DEESSER_FREQ_MIN, DEESSER_FREQ_MAX);
+    param->setNormalized(DEESSER_FREQ_DEFAULT_N);
+    parameters.addParameter(param);
+	param->setUnitID(2);
+
+    // De-esser drive
+    param = new GainParameter("De-esser Drive", ParameterInfo::kCanAutomate, kDeEsserDriveId, DEESSER_DRIVE_MIN, DEESSER_DRIVE_MAX);
+    parameters.addParameter(param);
+    param->setUnitID(2);
+
+    // De-esser enable
+    parameters.addParameter(STR16("Enable De-Esser"), // title
+                            STR16("On/Off"), // units
+                            stepCountToggle,
+                            1, // defaultNormalizedValue
+                            Vst::ParameterInfo::kCanAutomate, // flags
+                            kDeEsserEnabledId, // tag
+                            1, // unitID
+                            STR16("Enable")); // shortTitle
+
 
     // Output Gain parameter
     param = new GainParameter("Gain", ParameterInfo::kCanAutomate, kGainId, GAIN_MIN, GAIN_MAX);
@@ -231,6 +258,10 @@ tresult PLUGIN_API DiaProController::setComponentState (IBStream* state)
     float savedCompMix;
     int32 savedCompStereoLink;
     int32 savedCompEnabled;
+    float savedDeEsserThresh;
+    float savedDeEsserFreq;
+    float savedDeEsserDrive;
+    int32 savedDeEsserEnabled;
 
     if (!streamer.readInt32(savedBypass) ||
         !streamer.readFloat(savedGain) ||
@@ -242,7 +273,12 @@ tresult PLUGIN_API DiaProController::setComponentState (IBStream* state)
         !streamer.readFloat(savedCompMakeup) ||
         !streamer.readFloat(savedCompMix) ||
         !streamer.readInt32(savedCompStereoLink) ||
-        !streamer.readInt32(savedCompEnabled)) {
+        !streamer.readInt32(savedCompEnabled) ||
+        !streamer.readFloat(savedDeEsserThresh) ||
+        !streamer.readFloat(savedDeEsserFreq) ||
+        !streamer.readFloat(savedDeEsserDrive) ||
+        !streamer.readInt32(savedDeEsserEnabled)
+    ) {
         return kResultFalse;
     }
 
@@ -255,8 +291,12 @@ tresult PLUGIN_API DiaProController::setComponentState (IBStream* state)
     setParamNormalized(kCompKneeId, savedCompKnee);
     setParamNormalized(kCompMakeupId, savedCompMakeup);
     setParamNormalized(kCompMixId, savedCompMix);
-    setParamNormalized(kCompStereoLink, savedCompStereoLink ? 1 : 0);
-    setParamNormalized(kCompEnabled, savedCompEnabled ? 1 : 0);
+    setParamNormalized(kCompStereoLinkId, savedCompStereoLink ? 1 : 0);
+    setParamNormalized(kCompEnabledId, savedCompEnabled ? 1 : 0);
+    setParamNormalized(kDeEsserThreshId, savedDeEsserThresh);
+    setParamNormalized(kDeEsserFreqId, savedDeEsserFreq);
+    setParamNormalized(kDeEsserDriveId, savedDeEsserDrive);
+    setParamNormalized(kDeEsserEnabledId, savedDeEsserEnabled ? 1 : 0);
 
 	return kResultOk;
 }
