@@ -44,23 +44,23 @@ The gain applied to the sibilances.
 
 
 ```
-                                                               |\
-                                    +------------------------->|.a>-----\     *
-                                    |                          |/         >*     *
-                                    |   | \        | \         |          *  SUM  *---> y(n)
-          +----------------------+  |   |    \     |   \       |\         >*     *
-x(n) -+-->|         Z^-D         |--+-->| DCA >--->|    >----->|.b>-----/     *
-      |   +----------------------+      |    /     |   /       |/  
-      |              |                  | /        | /         |
-      |          look-ahead              |          |          |
-      |                                  |          |          |
-      |   +-------+      +-------+       |          |          |
-      |   |  RMS  |      | Gain  |       |          |          |
-      +-->|  Det  |----->| Calc  |-------+          |          |
-          | =det  |      | =gr   |                  |          |
-          +-------+      +-------+                  |          |
-            |   |          | | |                    |          |
-           att rel         t k n                 makeup       mix
+                                                               | \
+                                    +------------------------->|1-n>----\     *
+                                    |                          | /        >*     *
+                                    |   | \        | \          |         *  SUM  *---> y(n)
+          +----------------------+  |   |    \     |   \       | \        >*     *
+x(n) -+-->|         Z^-D         |--+-->| DCA >--->|    >----->| n >----/     *
+      |   +----------------------+      |    /     |   /       | /  
+      |              |                  | /        | /          |
+      |          look-ahead              |          |           |
+      |                                  |          |           |
+      |   +-------+      +-------+       |          |           |
+      |   |  RMS  |      | Gain  |       |          |           |
+      +-->|  Det  |----->| Calc  |-------+          |           |
+          | =det  |      | =gr   |                  |           |
+          +-------+      +-------+                  |           |
+            |   |          | | |                    |           |
+           att rel         t k n                 makeup        mix
                            h n :                   
                            r e 1
 ```
@@ -128,6 +128,41 @@ threshold.
 Also known as dry/wet control, allows mixing some of the original audio to the
 output.
 
+## Exciter
+
+```
+                                                                  | \
+x(n) -+---------------------------------------------------------->|1-n>----\     *
+      |                                                           | /        >*     *
+      |                                                            |         *  SUM  *---> y(n)
+      | | \    +-----+  | \    +-----+  +---+  +-----+  +-----+   | \        >*     *
+      +-|   >->| HPF |->|   >->| 4/\ |->| S |->| LPF |->| 4\/ |-->| n >----/     *
+        | /    +-----+  | /    +-----+  +---+  +-----+  +-----+   | /  
+         |        |      |                                         |
+         |        |      |                                         |
+        drive    fc  saturation                                   mix
+```
+
+**Drive [dB]**
+
+Gain before the high-pass filter, but it doesn't affect the dry signal used
+for the *blend* at the end of the signal chain.
+
+**Freq [Hz]**
+
+High-pass cutoff frequency before the waveshaper.
+
+**Saturation [dB]**
+
+Amplifies the signal after the high pass filter and just before the signal is
+feeded into the waveshaper.
+
+**Blend**
+
+The function of the blend knob is the same as mix in the compressor. However,
+in the case of an exciter it should be kept at minimum, or otherwise only
+the frequencies higher than *fc* can be heard in the output.
+
 ## Output
 
 **Gain**
@@ -139,8 +174,10 @@ Building
 
 ### Prerequisites
 
-- Download and put it somewhere [VST 3 Audio Plug-Ins SDK](https://www.steinberg.net/en/company/developers.html)
-- Run `copy_vst2_to_vst3_sdk.sh` in the directory
+**VST3 SDK**
+
+Download and put it somewhere [VST 3 Audio Plug-Ins SDK](https://www.steinberg.net/en/company/developers.html).
+Run `copy_vst2_to_vst3_sdk.sh` in the directory.
 
 The latest version of the SDK is missing some files, so download the old version
 of the SDK from here [here](https://www.steinberg.net/sdk_downloads/vstsdk366_27_06_2016_build_61.zip)
@@ -149,6 +186,15 @@ Copy `plugininterfaces/vst2.x` from the old version to the new version under
 
 Add  `_VSTPluginMain` as the last line of `VST_SDK/VST3_SDK/public.sdk/source/main/macexport.exp`
 as the SDK developers forgot to include the main function symbol for VST2.x plug-ins.
+
+**Install fftw**
+
+`fftw` is used for the exciter unit of this plugin effect. On MacOS it can be
+installed using [Brew](https://brew.sh/).
+
+```
+brew install fftw
+```
 
 ### Running the build
 
@@ -166,9 +212,3 @@ Editing the Interface
 ```
 
 Finally *Save As* on top of `resource/editor.uidesc`.
-
-TODO
-----
-
-- Make sure turning the knobs makes smooth changes to the output
-- Setup MIDI control

@@ -8,6 +8,7 @@
 #include "paramids.h"
 #include "compressor.h"
 #include "deesser.h"
+#include "exciter.h"
 
 namespace MyVst {
 
@@ -80,6 +81,8 @@ protected:
     DeEsser    <Sample64> dees64;
     Compressor <Sample32> comp32;
     Compressor <Sample64> comp64;
+    Exciter    <Sample32> exct32;
+    Exciter    <Sample64> exct64;
 
     // VU
 	float fVuPPMInOld[2];

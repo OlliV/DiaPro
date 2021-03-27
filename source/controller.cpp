@@ -182,6 +182,7 @@ tresult PLUGIN_API DiaProController::initialize (FUnknown* context)
                             1, // unitID
                             STR16("Enable")); // shortTitle
 
+
     // De-esser threshold
     param = new GainParameter("De-esser Threshold", ParameterInfo::kCanAutomate, kDeEsserThreshId, DEESSER_THRESH_MIN, DEESSER_THRESH_MAX);
     parameters.addParameter(param);
@@ -210,6 +211,39 @@ tresult PLUGIN_API DiaProController::initialize (FUnknown* context)
 
     // De-esser act led
     parameters.addParameter(STR16("DeEsserAct"), nullptr, 0, 0, ParameterInfo::kIsReadOnly, kDeEsserActId);
+
+
+    // Exciter drive
+    param = new GainParameter("Exciter Drive", ParameterInfo::kCanAutomate, kExciterDriveId, EXCITER_DRIVE_MIN, EXCITER_DRIVE_MAX);
+    parameters.addParameter(param);
+    param->setUnitID(3);
+
+    // Exciter fc
+	param = new Steinberg::Vst::mda::ScaledParameter(USTRING("Exciter fc"), USTRING("Hz"), 0, EXCITER_FC_DEFAULT_N, ParameterInfo::kCanAutomate, kExciterFcId, EXCITER_FC_MIN, EXCITER_FC_MAX);
+    param->setNormalized(EXCITER_FC_DEFAULT_N);
+    parameters.addParameter(param);
+	param->setUnitID(3);
+
+    // Exciter saturation
+    param = new GainParameter("Exciter Saturation", ParameterInfo::kCanAutomate, kExciterSatId, EXCITER_SAT_MIN, EXCITER_SAT_MAX);
+    parameters.addParameter(param);
+    param->setUnitID(3);
+
+    // Exciter blend
+    param = new GainParameter("Exciter Blend", ParameterInfo::kCanAutomate, kExciterBlendId, EXCITER_BLEND_MIN, EXCITER_BLEND_MAX);
+    parameters.addParameter(param);
+    param->setUnitID(3);
+
+    // Exciter enable
+    parameters.addParameter(STR16("Enable Exciter"), // title
+                            STR16("On/Off"), // units
+                            stepCountToggle,
+                            1, // defaultNormalizedValue
+                            Vst::ParameterInfo::kCanAutomate, // flags
+                            kExciterEnabledId, // tag
+                            1, // unitID
+                            STR16("Enable")); // shortTitle
+
 
     // Output Gain parameter
     param = new GainParameter("Gain", ParameterInfo::kCanAutomate, kGainId, GAIN_MIN, GAIN_MAX);
@@ -271,6 +305,11 @@ tresult PLUGIN_API DiaProController::setComponentState (IBStream* state)
     float savedDeEsserFreq;
     float savedDeEsserDrive;
     int32 savedDeEsserEnabled;
+    float savedExciterDrive;
+    float savedExciterFc;
+    float savedExciterSat;
+    float savedExciterBlend;
+    int32 savedExciterEnabled;
 
     if (!streamer.readInt32(savedBypass) ||
         !streamer.readFloat(savedGain) ||
@@ -287,7 +326,12 @@ tresult PLUGIN_API DiaProController::setComponentState (IBStream* state)
         !streamer.readFloat(savedDeEsserThresh) ||
         !streamer.readFloat(savedDeEsserFreq) ||
         !streamer.readFloat(savedDeEsserDrive) ||
-        !streamer.readInt32(savedDeEsserEnabled)
+        !streamer.readInt32(savedDeEsserEnabled) ||
+        !streamer.readFloat(savedExciterDrive) ||
+        !streamer.readFloat(savedExciterFc) ||
+        !streamer.readFloat(savedExciterSat) ||
+        !streamer.readFloat(savedExciterBlend) ||
+        !streamer.readInt32(savedExciterEnabled)
     ) {
         return kResultFalse;
     }
@@ -308,6 +352,11 @@ tresult PLUGIN_API DiaProController::setComponentState (IBStream* state)
     setParamNormalized(kDeEsserFreqId, savedDeEsserFreq);
     setParamNormalized(kDeEsserDriveId, savedDeEsserDrive);
     setParamNormalized(kDeEsserEnabledId, savedDeEsserEnabled ? 1 : 0);
+    setParamNormalized(kExciterDriveId, savedExciterDrive);
+    setParamNormalized(kExciterDriveId, savedExciterFc);
+    setParamNormalized(kExciterDriveId, savedExciterSat);
+    setParamNormalized(kExciterDriveId, savedExciterBlend);
+    setParamNormalized(kExciterEnabledId, savedExciterEnabled ? 1 : 0);
 
 	return kResultOk;
 }

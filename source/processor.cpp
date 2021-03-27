@@ -69,6 +69,16 @@ tresult PLUGIN_API DiaProProcessor::setActive (TBool state)
         dees64.reset();
         comp64.updateParams(sampleRate);
         comp64.reset();
+
+        /*
+         * Note that the initialization order is different from the other
+         * effect processors.
+         */
+        exct32.reset(sampleRate);
+        exct32.updateParams();
+
+        exct64.reset(sampleRate);
+        exct64.updateParams();
     }
 
     /*
@@ -92,6 +102,7 @@ void DiaProProcessor::handleParamChanges(IParameterChanges* paramChanges)
                 int32 numPoints = paramQueue->getPointCount();
                 bool compChanged = false;
                 bool deesChanged = false;
+                bool exctChanged = false;
 
                 switch (paramQueue->getParameterId ()) {
                     case kBypassId:
@@ -217,7 +228,47 @@ void DiaProProcessor::handleParamChanges(IParameterChanges* paramChanges)
                             dees64.enabled = value > 0.5f;
                         }
                         break;
+
+                    case kExciterDriveId:
+                        if (paramQueue->getPoint(numPoints - 1, sampleOffset, value) == kResultTrue) {
+                            exct32.drive = value;
+                            exct64.drive = value;
+                            exctChanged = true;
+                        }
+                        break;
+
+                    case kExciterFcId:
+                        if (paramQueue->getPoint(numPoints - 1, sampleOffset, value) == kResultTrue) {
+                            exct32.fc = value;
+                            exct64.fc = value;
+                            exctChanged = true;
+                        }
+                        break;
+
+                    case kExciterSatId:
+                        if (paramQueue->getPoint(numPoints - 1, sampleOffset, value) == kResultTrue) {
+                            exct32.sat = value;
+                            exct64.sat = value;
+                            exctChanged = true;
+                        }
+                        break;
+
+                    case kExciterBlendId:
+                        if (paramQueue->getPoint(numPoints - 1, sampleOffset, value) == kResultTrue) {
+                            exct32.blend = value;
+                            exct64.blend = value;
+                            exctChanged = true;
+                        }
+                        break;
+
+                    case kExciterEnabledId:
+                        if (paramQueue->getPoint(numPoints - 1, sampleOffset, value) == kResultTrue) {
+                            exct32.enabled = value > 0.5f;
+                            exct64.enabled = value > 0.5f;
+                        }
+                        break;
                 }
+
                 if (compChanged) {
                     float sampleRate = (float)this->processSetup.sampleRate;
 
@@ -229,6 +280,10 @@ void DiaProProcessor::handleParamChanges(IParameterChanges* paramChanges)
 
                     dees32.updateParams(sampleRate);
                     dees64.updateParams(sampleRate);
+                }
+                if (exctChanged) {
+                    exct32.updateParams();
+                    exct64.updateParams();
                 }
             }
         }
@@ -306,25 +361,31 @@ tresult PLUGIN_API DiaProProcessor::process (Vst::ProcessData& data)
     }
 
     if (data.symbolicSampleSize == kSample32) {
-        processVuPPM<Sample32>((Sample32**)in, fVuPPMIn, nrChannels, data.numSamples);
+        int nrSamples = data.numSamples;
+
+        processVuPPM<Sample32>((Sample32**)in, fVuPPMIn, nrChannels, nrSamples);
 
         if (!bBypass) {
-            dees32.process((Sample32**)out, nrChannels, data.numSamples);
-            comp32.process((Sample32**)out, nrChannels, data.numSamples);
-            processGain<Sample32>((Sample32**)out, nrChannels, data.numSamples, fGain);
+            dees32.process((Sample32**)out, nrChannels, nrSamples);
+            comp32.process((Sample32**)out, nrChannels, nrSamples);
+            exct32.process((Sample32**)out, nrChannels, nrSamples);
+            processGain<Sample32>((Sample32**)out, nrChannels, nrSamples, fGain);
         }
 
-        processVuPPM<Sample32>((Sample32**)out, fVuPPMOut, nrChannels, data.numSamples);
+        processVuPPM<Sample32>((Sample32**)out, fVuPPMOut, nrChannels, nrSamples);
     } else {
-        processVuPPM<Sample64>((Sample64**)in, fVuPPMIn, nrChannels, data.numSamples);
+        int nrSamples = data.numSamples;
+
+        processVuPPM<Sample64>((Sample64**)in, fVuPPMIn, nrChannels, nrSamples);
 
         if (!bBypass) {
-            dees64.process((Sample64**)out, nrChannels, data.numSamples);
-            comp64.process((Sample64**)out, nrChannels, data.numSamples);
-            processGain<Sample64>((Sample64**)out, nrChannels, data.numSamples, fGain);
+            dees64.process((Sample64**)out, nrChannels, nrSamples);
+            comp64.process((Sample64**)out, nrChannels, nrSamples);
+            exct64.process((Sample64**)out, nrChannels, nrSamples);
+            processGain<Sample64>((Sample64**)out, nrChannels, nrSamples, fGain);
         }
 
-        processVuPPM<Sample64>((Sample64**)out, fVuPPMOut, nrChannels, data.numSamples);
+        processVuPPM<Sample64>((Sample64**)out, fVuPPMOut, nrChannels, nrSamples);
     }
 
     /*
@@ -465,6 +526,11 @@ tresult PLUGIN_API DiaProProcessor::setState (IBStream* state)
     float savedDeEsserFreq = 0;
     float savedDeEsserDrive = 0;
     int32 savedDeEsserEnabled = 0;
+    float savedExciterDrive = 0;
+    float savedExciterFc = 0;
+    float savedExciterSat = 0;
+    float savedExciterBlend = 0;
+    int32 savedExciterEnabled = 0;
 
     if (!streamer.readInt32(savedBypass) ||
         !streamer.readFloat(savedGain) ||
@@ -481,7 +547,12 @@ tresult PLUGIN_API DiaProProcessor::setState (IBStream* state)
         !streamer.readFloat(savedDeEsserThresh) ||
         !streamer.readFloat(savedDeEsserFreq) ||
         !streamer.readFloat(savedDeEsserDrive) ||
-        !streamer.readInt32(savedDeEsserEnabled)
+        !streamer.readInt32(savedDeEsserEnabled) ||
+        !streamer.readFloat(savedExciterDrive) ||
+        !streamer.readFloat(savedExciterFc) ||
+        !streamer.readFloat(savedExciterSat) ||
+        !streamer.readFloat(savedExciterBlend) ||
+        !streamer.readInt32(savedExciterEnabled)
     ) {
             return kResultFalse;
     }
@@ -526,6 +597,18 @@ tresult PLUGIN_API DiaProProcessor::setState (IBStream* state)
     dees64.drive = savedDeEsserDrive;
     dees64.enabled = savedDeEsserEnabled;
     dees64.updateParams(sampleRate);
+
+    exct32.drive = savedExciterDrive;
+    exct32.fc = savedExciterFc;
+    exct32.sat = savedExciterSat;
+    exct32.blend = savedExciterBlend;
+    exct32.updateParams();
+
+    exct64.drive = savedExciterDrive;
+    exct64.fc = savedExciterFc;
+    exct64.sat = savedExciterSat;
+    exct64.blend = savedExciterBlend;
+    exct64.updateParams();
 
 	return kResultOk;
 }

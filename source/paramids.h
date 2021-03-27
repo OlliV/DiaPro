@@ -46,6 +46,18 @@
 #define DEESSER_DRIVE_MIN          -20.0f
 #define DEESSER_DRIVE_MAX           20.0f
 #define DEESSER_DRIVE_DEFAULT_N     0.50f
+#define EXCITER_DRIVE_MIN          -20.0f
+#define EXCITER_DRIVE_MAX           20.0f
+#define EXCITER_DRIVE_DEFAULT_N     0.5f
+#define EXCITER_FC_MIN              20.0f
+#define EXCITER_FC_MAX              10000.0f
+#define EXCITER_FC_DEFAULT_N        NORM(5000.0f, EXCITER_FC_MIN, EXCITER_FC_MAX)
+#define EXCITER_SAT_MIN            -20.0f
+#define EXCITER_SAT_MAX             20.0f
+#define EXCITER_SAT_DEFAULT_N       0.5f
+#define EXCITER_BLEND_MIN           0.0f
+#define EXCITER_BLEND_MAX           1.0f
+#define EXCITER_BLEND_DEFAULT_N     0.1f
 
 static inline float db2norm(float db, float min, float max)
 {
@@ -87,5 +99,10 @@ enum {
     kDeEsserDriveId,
     kDeEsserEnabledId,
     kDeEsserActId,
+    kExciterDriveId,
+    kExciterFcId,
+    kExciterSatId,
+    kExciterBlendId,
+    kExciterEnabledId,
     kNrParams
 };

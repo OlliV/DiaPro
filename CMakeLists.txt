@@ -17,16 +17,19 @@ set(SDK_ROOT "${vst3sdk_SOURCE_DIR}")
 add_subdirectory(${vst3sdk_SOURCE_DIR} ${PROJECT_BINARY_DIR}/vst3sdk)
 smtg_enable_vst3_sdk()
 
+add_compile_definitions(HAVE_FFTW)
+
 smtg_add_vst3plugin(${target}
     ${vst3sdk_SOURCE_DIR}/public.sdk/source/vst/vst2wrapper/vst2wrapper.sdk.cpp
-    source/mdaParameter.cpp
-    source/version.h
     source/cids.h
-    source/processor.h
-    source/processor.cpp
-    source/controller.h
     source/controller.cpp
+    source/controller.h
     source/entry.cpp
+    source/fx/fxobjects.cpp
+    source/mdaParameter.cpp
+    source/processor.cpp
+    source/processor.h
+    source/version.h
 )
 
 target_sources(${target}
@@ -36,6 +39,7 @@ target_sources(${target}
 target_link_libraries(${target}
     PRIVATE
     vstgui_support
+    /usr/local/lib/libfftw3.a # TODO Brew specific
     )
 
 smtg_add_vst3_resource(${target} "resource/editor.uidesc")
@@ -54,6 +58,9 @@ smtg_add_vst3_snapshot(${target} resource/95C62AD875FF5DFC8D89C9C51E998E0D_snaps
 
 if(SMTG_MAC)
     set_target_properties(${target} PROPERTIES XCODE_ATTRIBUTE_EXPORTED_SYMBOLS_FILE macexport.exp)
+
+    # To find fft installed with Brew
+    include_directories(AFTER /usr/local/include)
 endif()
 
 target_link_libraries(${target}
