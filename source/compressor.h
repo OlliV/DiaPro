@@ -240,7 +240,13 @@ void Compressor<SampleType>::process(SampleType** inOut, int nrChannels, int nrS
                     *pSample++ = xn_dl * gr * cooked.cmakeup * mix + xn_dl * (1.0f - mix);
                 } else {
                     update_gr_meter(ch, 1.0f);
-                    pSample++;
+
+                    /*
+                     * We take a sample from the delay line to avoid a
+                     * glitch/pop when turning the compressor off and
+                     * on again.
+                     */
+                    *pSample++ = p->delay.process(s);
                 }
             }
         }

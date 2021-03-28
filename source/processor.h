@@ -50,6 +50,9 @@ public:
                                                       Steinberg::int32 numOuts) SMTG_OVERRIDE;
     Steinberg::uint32 PLUGIN_API getLatencySamples() override
     {
+        /*
+         * The compressor is applying a delay even when it's turned off.
+         */
         return comp32.get_nlookahead();
     }
 	Steinberg::tresult PLUGIN_API process (Steinberg::Vst::ProcessData& data) SMTG_OVERRIDE;
