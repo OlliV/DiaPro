@@ -11,16 +11,19 @@ class Exciter {
 public:
     Exciter()
     {
+        drive = EXCITER_DRIVE_DEFAULT_N;
+        fc = EXCITER_FC_DEFAULT_N;
+        sat = EXCITER_SAT_DEFAULT_N;
+        blend = EXCITER_BLEND_DEFAULT_N;
     }
 
     /*
      * Normalized parameters tuned directly by the user.
      */
-    SampleType drive = EXCITER_DRIVE_DEFAULT_N;
-    float fc = EXCITER_FC_DEFAULT_N; // fc fo the HPF
-    SampleType sat = EXCITER_SAT_DEFAULT_N;
-    SampleType blend = EXCITER_BLEND_DEFAULT_N;
-
+    SampleType drive;
+    float fc; // fc fo the HPF
+    SampleType sat;
+    SampleType blend;
     bool enabled = true;
 
     void updateParams(void);

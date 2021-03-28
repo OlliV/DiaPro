@@ -383,9 +383,9 @@ tresult PLUGIN_API DiaProController::setComponentState (IBStream* state)
     setParamNormalized(kDeEsserDriveId, savedDeEsserDrive);
     setParamNormalized(kDeEsserEnabledId, savedDeEsserEnabled ? 1 : 0);
     setParamNormalized(kExciterDriveId, savedExciterDrive);
-    setParamNormalized(kExciterDriveId, savedExciterFc);
-    setParamNormalized(kExciterDriveId, savedExciterSat);
-    setParamNormalized(kExciterDriveId, savedExciterBlend);
+    setParamNormalized(kExciterFcId, savedExciterFc);
+    setParamNormalized(kExciterSatId, savedExciterSat);
+    setParamNormalized(kExciterBlendId, savedExciterBlend);
     setParamNormalized(kExciterEnabledId, savedExciterEnabled ? 1 : 0);
 
 	return kResultOk;
