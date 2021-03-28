@@ -31,6 +31,8 @@
 #include "paramids.h"
 #include "delay.h"
 
+#define LOOKAHEAD_BUF_SIZE 4096
+
 namespace MyVst {
 using namespace Steinberg::Vst;
 
@@ -92,7 +94,7 @@ private:
      * Per channel process variables.
      */
     struct proc {
-        Delay <SampleType, 100> delay;
+        Delay <SampleType, LOOKAHEAD_BUF_SIZE> delay;
         SampleType runave;
     } proc[2];
 
