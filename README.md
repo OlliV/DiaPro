@@ -11,10 +11,15 @@ values are determined by trial and error, and by stealing from other
 sources such as
 [Musician on a mission](https://www.musicianonamission.com/).
 
+![Screenshot showing the plugin](doc/screenshot.jpeg?raw=true "DiaPro")
+
 Parameters
 ----------
 
 ### De-esser
+
+The de-esser unit is intended to attenuate excess sibilant consonants in a
+dialog or vocals.
 
 **Presets for lazy people**
 
@@ -25,8 +30,7 @@ Parameters
 
 **Enable**
 
-Enables the de-esser processor. The de-esser will always mix the left and right
-channels to its output.
+Enables the de-esser processor. 
 
 **Threshold [dB]**
 
@@ -45,11 +49,11 @@ The gain applied to the sibilances.
 
 ```
                                                                | \
-                                    +------------------------->|1-n>----\     *
+                                    +------------------------->|1-m>----\     *
                                     |                          | /        >*     *
                                     |   | \        | \          |         *  SUM  *---> y(n)
           +----------------------+  |   |    \     |   \       | \        >*     *
-x(n) -+-->|         Z^-D         |--+-->| DCA >--->|    >----->| n >----/     *
+x(n) -+-->|         Z^-D         |--+-->| DCA >--->|    >----->| m >----/     *
       |   +----------------------+      |    /     |   /       | /  
       |              |                  | /        | /          |
       |          look-ahead              |          |           |
@@ -123,12 +127,16 @@ compensate the lag of the detector and thus adjusting the gain reduction of the
 output at the right time and not just after the signal already has hit the
 threshold.
 
-**Mix**
+**Mix [1:m]**
 
 Also known as dry/wet control, allows mixing some of the original audio to the
 output.
 
 ## Exciter
+
+The exciter unit amplifies the higher frequencies of the incoming audio and
+adds harmonics to it by soft-clipping the signal with a waveshaper function.
+The soft-clipped signal is finally combined with the original audio.
 
 ```
                                                              | \
@@ -157,7 +165,7 @@ High-pass cutoff frequency before the waveshaper.
 Amplifies the signal after the high pass filter and just before the signal is
 feeded into the waveshaper.
 
-**Blend**
+**Blend [1:n]**
 
 The function of the blend knob is the same as mix in the compressor. However,
 in the case of an exciter it should be kept at minimum, or otherwise only
