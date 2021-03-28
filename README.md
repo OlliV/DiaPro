@@ -13,6 +13,12 @@ sources such as
 
 ![Screenshot showing the plugin](doc/screenshot.jpeg?raw=true "DiaPro")
 
+License
+-------
+
+See [LICENSE](LICENSE).
+
+
 Parameters
 ----------
 
@@ -38,7 +44,7 @@ x(n) -->| Crossover |     +------------+    *  SUM  *---> y(n)
 
 **Enable**
 
-Enables the de-esser processor. 
+Enables the de-esser unit. 
 
 **Threshold [dB]**
 
@@ -82,7 +88,7 @@ x(n) -+-->|         Z^-D         |--+-->| DCA >--->|    >----->| m >----/     *
 
 **Presets for lazy people**
 
-| Use case    | Ratio    | Knee | Attack [ms] | Release [ms] | Mix  | 
+| Use case    | Ratio    | Knee | Attack [ms] | Release [ms] | Mix  |
 |-------------|----------|------|-------------|--------------|------|
 | Vocals      |          |      |      2 - 10 |              |      |
 | Instruments |          |      |         40  |      60      |      |
@@ -90,7 +96,7 @@ x(n) -+-->|         Z^-D         |--+-->| DCA >--->|    >----->| m >----/     *
 
 **Enable**
 
-Enables the compressor processor.
+Enables the compressor unit.
 
 **Stereo Link**
 
@@ -162,6 +168,16 @@ x(n) -+----------------------------------------------------->|1-n>----\     *
         drive    fc              saturation                  mix
 ```
 
+**Presets for lazy people**
+
+| Use case    | Drive | Freq [Hz] | Saturation |    Mix    |
+|-------------|-------|-----------|------------|-----------|
+| Dialog      |     6 |      2-5k |       3.20 | 0.2 - 0.5 |
+
+**Enable**
+
+Enables the exciter unit.
+
 **Drive [dB]**
 
 Gain before the high-pass filter, but it doesn't affect the dry signal used
@@ -195,20 +211,31 @@ Building
 
 **VST3 SDK**
 
-Download and put it somewhere [VST 3 Audio Plug-Ins SDK](https://www.steinberg.net/en/company/developers.html).
-Run `copy_vst2_to_vst3_sdk.sh` in the directory.
+Download [VST 3 Audio Plug-Ins SDK](https://www.steinberg.net/en/company/developers.html)
+and extract it anywhere you wish, but remember that the directory you choose
+will be the "installation path" for the SDK.
 
-The latest version of the SDK is missing some files, so download the old version
-of the SDK from here [here](https://www.steinberg.net/sdk_downloads/vstsdk366_27_06_2016_build_61.zip)
+**VST2.x support**
+
+Run `copy_vst2_to_vst3_sdk.sh` in the VST3 SDK directory.
+
+The latest version of the SDK is missing some files for the VST2.x wrapper
+because Steinberg has officially dropped the VST2.x support. You can still
+download and older version of the SDK from
+[here](https://www.steinberg.net/sdk_downloads/vstsdk366_27_06_2016_build_61.zip)
+
 Copy `plugininterfaces/vst2.x` from the old version to the new version under
 `../VST_SDK/VST3_SDK/pluginterfaces`.
 
 Add  `_VSTPluginMain` as the last line of `VST_SDK/VST3_SDK/public.sdk/source/main/macexport.exp`
 as the SDK developers forgot to include the main function symbol for VST2.x plug-ins.
 
-**Install fftw**
+**NOTE** that you may not be legally allowed to distribute the binaries built
+this way as the VST2.x files are not under an open source license.
 
-`fftw` is used for the exciter unit of this plugin effect. On MacOS it can be
+**fftw**
+
+`fftw` is required by the exciter unit of this plugin effect. On MacOS it can be
 installed using [Brew](https://brew.sh/).
 
 ```
@@ -217,11 +244,33 @@ brew install fftw
 
 ### Running the build
 
+Now you are ready to build the actual plugin.
+
 ```
 mkdir build
 cmake -DSMTG_RUN_VST_VALIDATOR=OFF -DSMTG_ADD_VSTGUI=ON -G"Xcode" -DCMAKE_BUILD_TYPE=Debug ..
 cmake --build .
 ```
+
+If everything went fine the build script should make a symlink in the system VST
+plugin path, pointing to the build result of the build. Meaning that you can now
+start your DAW/VST host and it should be able to discover the plugin.
+
+### Troubleshooting
+
+Some pointers:
+
+**I can't see the plugin in my DAW**
+
+Some DAWs don't look from all possible "legal" VST paths nor it's configurable
+You might need to copy the symlink or the bundle/binary to a path that your DAW
+supports.
+
+**VST2.x support doesn't work**
+
+It's probably because VST2.x-only DAWs and host don't usually look from VST3
+paths nor for bundles/files named `*.vst3`. Make a copy of the file into a
+VST2.x path and change the file extension to just `.vst`.
 
 Editing the Interface
 ---------------------
@@ -230,4 +279,5 @@ Editing the Interface
 ../../VST_SDK/VST3_SDK/build/bin/Debug/editorhost.app/Contents/MacOS/editorhost VST3/Debug/DiaPro.vst3
 ```
 
-Finally *Save As* on top of `resource/editor.uidesc`.
+Finally *Save As* on top of `resource/editor.uidesc`. (*Save* should work too,
+on the latest SDK version).
