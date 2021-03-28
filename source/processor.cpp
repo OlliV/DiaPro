@@ -602,12 +602,14 @@ tresult PLUGIN_API DiaProProcessor::setState (IBStream* state)
     exct32.fc = savedExciterFc;
     exct32.sat = savedExciterSat;
     exct32.blend = savedExciterBlend;
+    exct32.enabled = savedExciterEnabled;
     exct32.updateParams();
 
     exct64.drive = savedExciterDrive;
     exct64.fc = savedExciterFc;
     exct64.sat = savedExciterSat;
     exct64.blend = savedExciterBlend;
+    exct64.enabled = savedExciterEnabled;
     exct64.updateParams();
 
 	return kResultOk;
