@@ -441,7 +441,7 @@ tresult PLUGIN_API DiaProProcessor::process (Vst::ProcessData& data)
 tresult PLUGIN_API DiaProProcessor::setupProcessing (Vst::ProcessSetup& newSetup)
 {
 	//--- called before any processing ----
-	return AudioEffect::setupProcessing (newSetup);
+	return AudioEffect::setupProcessing(newSetup);
 }
 
 tresult PLUGIN_API DiaProProcessor::canProcessSampleSize (int32 symbolicSampleSize)
@@ -618,7 +618,31 @@ tresult PLUGIN_API DiaProProcessor::getState (IBStream* state)
 	// here we need to save the model
 	IBStreamer streamer (state, kLittleEndian);
 
-    // TODO write out the state
+    /*
+     * YOLO, we just write the sate in the right order here
+     * and hope it goes well.
+     */
+    streamer.writeInt32(bBypass ? 1 : 0);
+    streamer.writeFloat(fGain);
+    streamer.writeFloat(comp32.thresh);
+    streamer.writeFloat(comp32.attime);
+    streamer.writeFloat(comp32.reltime);
+    streamer.writeFloat(comp32.ratio);
+    streamer.writeFloat(comp32.knee);
+    streamer.writeFloat(comp32.makeup);
+    streamer.writeFloat(comp32.mix);
+    streamer.writeFloat(comp32.lookahead);
+    streamer.writeInt32(comp32.stereo_link ? 1 : 0);
+    streamer.writeInt32(comp32.enabled ? 1 : 0);
+    streamer.writeFloat(dees32.thresh);
+    streamer.writeFloat(dees32.freq);
+    streamer.writeFloat(dees32.drive);
+    streamer.writeInt32(dees32.enabled ? 1 : 0);
+    streamer.writeFloat(exct32.drive);
+    streamer.writeFloat(exct32.fc);
+    streamer.writeFloat(exct32.sat);
+    streamer.writeFloat(exct32.blend);
+    streamer.writeInt32(exct32.enabled ? 1 : 0);
 
 	return kResultOk;
 }
