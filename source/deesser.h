@@ -116,10 +116,8 @@ void DeEsser<SampleType>::process(SampleType **inOut, int nrChannels, int nrSamp
                 act_time++;
             } else {
                 g = f1 + f2 + tmp; // limit
-                //g = 0.5f * (a + b);
             }
 
-            //brackets for full-band!!!
             if (enabled) {
                 *x++ = g;
             } else {

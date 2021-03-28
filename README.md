@@ -21,6 +21,14 @@ Parameters
 The de-esser unit is intended to attenuate excess sibilant consonants in a
 dialog or vocals.
 
+```
+        +-----------+     +------------+        *
+        |           |---->| Compressor |---->*     *
+x(n) -->| Crossover |     +------------+    *  SUM  *---> y(n)
+        |           |----------------------->*     *
+        +-----------+                           *
+``` 
+
 **Presets for lazy people**
 
 | Use case    | Threshold | Frequency [Hz] | Drive | 
@@ -46,6 +54,9 @@ The gain applied to the sibilances.
 
 ## Compressor
 
+The compressor unit attenuates loud sounds in the input signal and it's purpose
+in this plugin is to improve the clarity, readability and consistence of the
+speaker's or singer's voice.
 
 ```
                                                                | \
