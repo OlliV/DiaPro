@@ -59,7 +59,7 @@ private:
         SampleType env;
         SampleType fbuf1;
         SampleType fbuf2;
-    } proc;
+    } proc[2];
 };
 
 template <typename SampleType>
@@ -75,7 +75,8 @@ void DeEsser<SampleType>::updateParams(float sampleRate)
 template <typename SampleType>
 void DeEsser<SampleType>::reset(void)
 {
-    proc.env = proc.fbuf1 = proc.fbuf2 = 0.0f;
+    proc[0].env = proc[0].fbuf1 = proc[0].fbuf2 = 0.0f;
+    proc[1].env = proc[1].fbuf1 = proc[1].fbuf2 = 0.0f;
     act = 0.0f;
 }
 
@@ -83,69 +84,70 @@ template <typename SampleType>
 void DeEsser<SampleType>::process(SampleType **inOut, int nrChannels, int nrSamples)
 {
     nrChannels = std::min(nrChannels, 2);
+    int act_time = 0;
 
-    SampleType* x1 = inOut[0];
-    SampleType* x2 = nrChannels == 1 ? inOut[0] : inOut[1];
+    for (int ch = 0; ch < nrChannels; ch++) {
+        SampleType f1 = proc[ch].fbuf1;
+        SampleType f2 = proc[ch].fbuf2;
+        SampleType fi = cooked.fil;
+        SampleType fo = (1.0f - cooked.fil);
+        SampleType at = cooked.att;
+        SampleType re = cooked.rel;
+        SampleType th = cooked.thr;
+        SampleType gg = cooked.gai;
+        SampleType en = proc[ch].env;
 
-    SampleType f1 = proc.fbuf1;
-    SampleType f2 = proc.fbuf2;
-    SampleType fi = cooked.fil;
-    SampleType fo = (1.0f - cooked.fil);
-    SampleType at = cooked.att;
-    SampleType re = cooked.rel;
-    SampleType th = cooked.thr;
-    SampleType gg = cooked.gai;
-    SampleType en = proc.env;
+        SampleType* x = inOut[ch];
+        int i = nrSamples;
 
-    int i = nrSamples;
-    while (--i >= 0) {
-        SampleType a, b, tmp, g;
+        while (--i >= 0) {
+            SampleType tmp, g;
 
-        a = *x1;
-        b = *x2;
+            tmp = *x;
+            f1  = fo * f1 + fi * tmp;
+            tmp -= f1;
+            f2  = fo * f2 + fi * tmp;
+            tmp = gg * (tmp - f2); //extra HF gain
 
-        tmp = 0.5f * (a + b);
-        f1  = fo * f1 + fi * tmp;
-        tmp -= f1;
-        f2  = fo * f2 + fi * tmp;
-        tmp = gg * (tmp - f2); //extra HF gain
+            en = (tmp > en) ? en + at * (tmp - en) : en * re; // envelope
+            if (en > th) {
+                g = f1 + f2 + tmp * (th / en);
 
-        en = (tmp > en) ? en + at * (tmp - en) : en * re; // envelope
-        if (en > th) {
-            g = f1 + f2 + tmp * (th / en);
+                act_time++;
+            } else {
+                g = f1 + f2 + tmp; // limit
+                //g = 0.5f * (a + b);
+            }
 
+            //brackets for full-band!!!
+            if (enabled) {
+                *x++ = g;
+            } else {
+                x++;
+            }
+        }
+
+        if (fabs(f1) < 1.0e-10) {
+            proc[ch].fbuf1 = 0.0f;
+            proc[ch].fbuf2 = 0.0f;
+        } else {
+            proc[ch].fbuf1 = f1;
+            proc[ch].fbuf2 = f2;
+        }
+        if (fabs(en) < 1.0e-10) {
+            proc[ch].env = 0.0f;
+        } else {
+            proc[ch].env = en;
+        }
+
+        if (enabled && act_time > nrSamples / 2) {
             act = 1.0f;
         } else {
-            g = f1 + f2 + tmp; // limit
-            //g = 0.5f * (a + b);
-
-            act *= 0.8f;
+            act *= 0.9995f;
             if (act < 0.1f) {
                 act = 0.0f;
             }
         }
-
-        //brackets for full-band!!!
-        if (enabled) {
-            *x1++ = g;
-            *x2++ = g;
-        } else {
-            x1++;
-            x2++;
-        }
-    }
-
-    if (fabs(f1) < 1.0e-10) {
-        proc.fbuf1 = 0.0f;
-        proc.fbuf2 = 0.0f;
-    } else {
-        proc.fbuf1 = f1;
-        proc.fbuf2 = f2;
-    }
-    if (fabs(en) < 1.0e-10) {
-        proc.env = 0.0f;
-    } else {
-        proc.env = en;
     }
 }
 }
