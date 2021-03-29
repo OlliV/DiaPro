@@ -17,8 +17,8 @@ using namespace Steinberg::Vst;
 
 DiaProProcessor::DiaProProcessor ()
 {
-	//--- set the wanted controller for our processor
-	setControllerClass (kDiaProControllerUID);
+    //--- set the wanted controller for our processor
+    setControllerClass (kDiaProControllerUID);
 }
 
 DiaProProcessor::~DiaProProcessor ()
@@ -26,29 +26,29 @@ DiaProProcessor::~DiaProProcessor ()
 
 tresult PLUGIN_API DiaProProcessor::initialize (FUnknown* context)
 {
-	// Here the Plug-in will be instanciated
+    //---always initialize the parent-------
+    tresult result = AudioEffect::initialize (context);
+    if (result != kResultOk) {
+        return result;
+    }
 
-	//---always initialize the parent-------
-	tresult result = AudioEffect::initialize (context);
-	// if everything Ok, continue
-	if (result != kResultOk)
-	{
-		return result;
-	}
+    //--- create Audio IO ------
+    addAudioInput(STR16("Stereo In"), Steinberg::Vst::SpeakerArr::kStereo);
+    addAudioOutput(STR16("Stereo Out"), Steinberg::Vst::SpeakerArr::kStereo);
 
-	//--- create Audio IO ------
-	addAudioInput(STR16("Stereo In"), Steinberg::Vst::SpeakerArr::kStereo);
-	addAudioOutput(STR16("Stereo Out"), Steinberg::Vst::SpeakerArr::kStereo);
+    /*
+     * We want to grab MIDI CC events from the channel 2 so we need to add
+     * two channels and the channel 2 will be in index 2.
+     */
+    addEventInput(STR16("Event In"), 2);
 
-	return kResultOk;
+    return kResultOk;
 }
 
 tresult PLUGIN_API DiaProProcessor::terminate ()
 {
-	// Here the Plug-in will be de-instanciated, last possibility to remove some memory!
-
-	//---do not forget to call parent ------
-	return AudioEffect::terminate();
+    //---do not forget to call parent ------
+    return AudioEffect::terminate();
 }
 
 tresult PLUGIN_API DiaProProcessor::setActive (TBool state)
