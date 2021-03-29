@@ -444,35 +444,30 @@ tresult PLUGIN_API DiaProController::getParamValueByString (Vst::ParamID tag, Vs
 
 static const Steinberg::Vst::ParamID midi_cc_map[] = {
     [ControllerNumbers::kCtrlVolume] = kGainId,
-    [ControllerNumbers::kCtrlGPC3] = kCompThreshId,
-    [ControllerNumbers::kCtrlGPC5] = kCompAttimeId,
-    [ControllerNumbers::kCtrlGPC6] = kCompReltimeId,
-    [ControllerNumbers::kCtrlGPC4] = kCompRatioId,
+    [ControllerNumbers::kCtrlGPC2] = kCompThreshId,
+    [ControllerNumbers::kCtrlAttackTime] = kCompAttimeId,
+    [ControllerNumbers::kCtrlReleaseTime] = kCompReltimeId,
+    [ControllerNumbers::kCtrlGPC3] = kCompRatioId,
+    [ControllerNumbers::kCtrlGPC4] = kCompKneeId,
+    [ControllerNumbers::kCtrlGPC5] = kCompMakeupId,
+    [ControllerNumbers::kCtrlPan] = kCompMixId,
+    [ControllerNumbers::kCtrlGPC6] = kCompLookAheadId,
 #if 0
-    [-1] = kCompKneeId,
-    [-1] = kCompMakeupId,
-    [-1] = kCompMixId,
-    [-1] = kCompLookAheadId,
     [-1] = kCompStereoLinkId,
     [-1] = kCompEnabledId, // Toggles don't really work with the current VST3 SDK version
-    [-1] = kCompGrMeter0Id,
-    [-1] = kCompGrMeter1Id,
 #endif
     [ControllerNumbers::kCtrlGPC1] = kDeEsserThreshId,
-#if 0
-    [-1] = kDeEsserFreqId,
-#endif
-    [ControllerNumbers::kCtrlGPC2] = kDeEsserDriveId,
+    [ControllerNumbers::kCtrlEffect1] = kDeEsserFreqId,
+    [ControllerNumbers::kCtrlEffect2] = kDeEsserDriveId,
 #if 0
     [-1] = kDeEsserEnabledId,
-    [-1] = kDeEsserActId,
-    [-1] = kExciterDriveId,
-    [-1] = kExciterFcId,
 #endif
+    [ControllerNumbers::kCtrlExpression] = kExciterDriveId,
+    [ControllerNumbers::kCtrlFilterCutoff] = kExciterFcId,
     [ControllerNumbers::kCtrlGPC7] = kExciterSatId,
-    [ControllerNumbers::kCtrlGPC8] = kExciterBlendId,
+    [ControllerNumbers::kCtrlBalance] = kExciterBlendId,
 #if 0
-    [] = kExciterEnabledId,
+    [-1] = kExciterEnabledId,
 #endif
 };
 

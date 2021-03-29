@@ -58,7 +58,7 @@ The center frequency of sibilances to be suppressed.
 
 The gain applied to the sibilances.
 
-## Compressor
+### Compressor
 
 The compressor unit attenuates loud sounds in the input signal and it's purpose
 in this plugin is to improve the clarity, readability and consistence of the
@@ -149,7 +149,7 @@ threshold.
 Also known as dry/wet control, allows mixing some of the original audio to the
 output.
 
-## Exciter
+### Exciter
 
 The exciter unit amplifies the higher frequencies of the incoming audio and
 adds harmonics to it by soft-clipping the signal with a waveshaper function.
@@ -198,11 +198,38 @@ The function of the blend knob is the same as mix in the compressor. However,
 in the case of an exciter it should be kept at minimum, or otherwise only
 the frequencies higher than *fc* can be heard in the output.
 
-## Output
+### Output
 
 **Gain**
 
 Allows adding a final gain to the output.
+
+### MIDI Control
+
+It's possible to control the numeric parameters of this effect with
+MIDI Control Commands but it's not possible to toggle the switches
+at the moment. All commands must be sent to the MIDI channel 2.
+
+The MIDI control number mapping is as follows:
+
+| Parameters              | MIDI Control Name               | Control no |
+|-------------------------|---------------------------------|------------|
+| De-esser Threshold      | General Purpose Controller #1   |         16 |
+| De-esser Freq           | Effect Control 1                |         12 |
+| De-esser Drive          | Effect Control 2                |         13 |
+| Compressor Threshold    | General Purpose Controller #2   |         17 |
+| Compressor Attack time  | Attack Time                     |         73 |
+| Compressor Release time | Release Time                    |         72 |
+| Compressor Ratio        | General Purpose Controller #3   |         18 |
+| Compressor Knee         | General Purpose Controller #4   |         19 |
+| Compressor Makeup       | General Purpose Controller #5   |         80 |
+| Compressor Mix          | Pan                             |         10 |
+| Compressor Lookahead    | General Purpose Controller #6   |         81 |
+| Exciter Drive           | Expression                      |         11 |
+| Exciter fc              | Filter Cutoff                   |         71 |
+| Exciter Saturation      | General Purpose Controller #7   |         82 |
+| Exciter Blend           | Balance                         |          8 |
+| Gain                    | Channel Volume                  |          7 |
 
 Building
 --------
