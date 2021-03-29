@@ -113,7 +113,7 @@ void Compressor<SampleType>::updateParams(float sampleRate)
     cooked.cthreshv = exp(cooked.cthresh_db * DB2LOG);
     cooked.cmakeup = normdb2factor(makeup, COMP_MAKEUP_MIN, COMP_MAKEUP_MAX);
 
-    unsigned nlookahead = (unsigned)(PLAIN(lookahead, COMP_LOOKAHEAD_MIN, COMP_LOOKAHEAD_MAX) * sampleRate);
+    unsigned nlookahead = (unsigned)(PLAIN(lookahead, COMP_LOOKAHEAD_MIN, COMP_LOOKAHEAD_MAX) * 0.001 * sampleRate);
     proc[0].delay.set_len(nlookahead);
     proc[1].delay.set_len(nlookahead);
     cooked.nlookahead = nlookahead;
