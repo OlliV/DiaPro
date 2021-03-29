@@ -37,11 +37,8 @@ tresult PLUGIN_API DiaProProcessor::initialize (FUnknown* context)
 	}
 
 	//--- create Audio IO ------
-	addAudioInput (STR16 ("Stereo In"), Steinberg::Vst::SpeakerArr::kStereo);
-	addAudioOutput (STR16 ("Stereo Out"), Steinberg::Vst::SpeakerArr::kStereo);
-
-	/* If you don't need an event bus, you can remove the next line */
-	//addEventInput (STR16 ("Event In"), 1);
+	addAudioInput(STR16("Stereo In"), Steinberg::Vst::SpeakerArr::kStereo);
+	addAudioOutput(STR16("Stereo Out"), Steinberg::Vst::SpeakerArr::kStereo);
 
 	return kResultOk;
 }
@@ -92,209 +89,6 @@ tresult PLUGIN_API DiaProProcessor::setActive (TBool state)
 
 void DiaProProcessor::handleParamChanges(IParameterChanges* paramChanges)
 {
-        int32 numParamsChanged = paramChanges->getParameterCount ();
-        // for each parameter which are some changes in this audio block:
-        for (int32 i = 0; i < numParamsChanged; i++) {
-            IParamValueQueue* paramQueue = paramChanges->getParameterData(i);
-            if (paramQueue) {
-                ParamValue value;
-                int32 sampleOffset;
-                int32 numPoints = paramQueue->getPointCount();
-                bool compChanged = false;
-                bool deesChanged = false;
-                bool exctChanged = false;
-
-                switch (paramQueue->getParameterId ()) {
-                    case kBypassId:
-                        if (paramQueue->getPoint (numPoints - 1, sampleOffset, value) == kResultTrue) {
-                            bBypass = value > 0.5f;
-                        }
-                        break;
-
-                    case kGainId:
-                        // we use in this example only the last point of the queue.
-                        // in some wanted case for specific kind of parameter it makes sense to
-                        // retrieve all points and process the whole audio block in small blocks.
-                        if (paramQueue->getPoint(numPoints - 1, sampleOffset, value) == kResultTrue) {
-                            fGain = value;
-                        }
-                        break;
-
-                    case kCompThreshId:
-                        if (paramQueue->getPoint(numPoints - 1, sampleOffset, value) == kResultTrue) {
-                            comp32.thresh = value;
-                            comp64.thresh = value;
-                            compChanged = true;
-                        }
-                        break;
-
-                    case kCompAttimeId:
-                        if (paramQueue->getPoint(numPoints - 1, sampleOffset, value) == kResultTrue) {
-                            comp32.attime = value;
-                            comp64.attime = value;
-                            compChanged = true;
-                        }
-                        break;
-
-                    case kCompReltimeId:
-                        if (paramQueue->getPoint(numPoints - 1, sampleOffset, value) == kResultTrue) {
-                            comp32.reltime = value;
-                            comp64.reltime = value;
-                            compChanged = true;
-                        }
-                        break;
-
-                    case kCompRatioId:
-                        if (paramQueue->getPoint(numPoints - 1, sampleOffset, value) == kResultTrue) {
-                            comp32.ratio = value;
-                            comp64.ratio = value;
-                            compChanged = true;
-                        }
-                        break;
-
-                    case kCompKneeId:
-                        if (paramQueue->getPoint(numPoints - 1, sampleOffset, value) == kResultTrue) {
-                            comp32.knee = value;
-                            comp64.knee = value;
-                            compChanged = true;
-                        }
-                        break;
-
-                    case kCompMakeupId:
-                        if (paramQueue->getPoint(numPoints - 1, sampleOffset, value) == kResultTrue) {
-                            comp32.makeup = value;
-                            comp64.makeup = value;
-                            compChanged = true;
-                        }
-                        break;
-
-                    case kCompMixId:
-                        if (paramQueue->getPoint(numPoints - 1, sampleOffset, value) == kResultTrue) {
-                            comp32.mix = value;
-                            comp64.mix = value;
-                            compChanged = true;
-                        }
-                        break;
-
-                    case kCompLookAheadId:
-                        if (paramQueue->getPoint(numPoints - 1, sampleOffset, value) == kResultTrue) {
-                            comp32.lookahead = value;
-                            comp64.lookahead = value;
-                            compChanged = true;
-                        }
-                        break;
-
-                    case kCompStereoLinkId:
-                        if (paramQueue->getPoint(numPoints - 1, sampleOffset, value) == kResultTrue) {
-                            comp32.stereo_link = value > 0.5f;
-                            comp64.stereo_link = value > 0.5f;
-                        }
-                        break;
-
-                    case kCompEnabledId:
-                        if (paramQueue->getPoint(numPoints - 1, sampleOffset, value) == kResultTrue) {
-                            comp32.enabled = value > 0.5f;
-                            comp64.enabled = value > 0.5f;
-                        }
-                        break;
-
-                    case kDeEsserThreshId:
-                        if (paramQueue->getPoint(numPoints - 1, sampleOffset, value) == kResultTrue) {
-                            dees32.thresh = value;
-                            dees64.thresh = value;
-                            deesChanged = true;
-                        }
-                        break;
-
-                    case kDeEsserFreqId:
-                        if (paramQueue->getPoint(numPoints - 1, sampleOffset, value) == kResultTrue) {
-                            dees32.freq = value;
-                            dees64.freq = value;
-                            deesChanged = true;
-                        }
-                        break;
-
-                    case kDeEsserDriveId:
-                        if (paramQueue->getPoint(numPoints - 1, sampleOffset, value) == kResultTrue) {
-                            dees32.drive = value;
-                            dees64.drive = value;
-                            deesChanged = true;
-                        }
-                        break;
-
-                    case kDeEsserEnabledId:
-                        if (paramQueue->getPoint(numPoints - 1, sampleOffset, value) == kResultTrue) {
-                            dees32.enabled = value > 0.5f;
-                            dees64.enabled = value > 0.5f;
-                        }
-                        break;
-
-                    case kExciterDriveId:
-                        if (paramQueue->getPoint(numPoints - 1, sampleOffset, value) == kResultTrue) {
-                            exct32.drive = value;
-                            exct64.drive = value;
-                            exctChanged = true;
-                        }
-                        break;
-
-                    case kExciterFcId:
-                        if (paramQueue->getPoint(numPoints - 1, sampleOffset, value) == kResultTrue) {
-                            exct32.fc = value;
-                            exct64.fc = value;
-                            exctChanged = true;
-                        }
-                        break;
-
-                    case kExciterSatId:
-                        if (paramQueue->getPoint(numPoints - 1, sampleOffset, value) == kResultTrue) {
-                            exct32.sat = value;
-                            exct64.sat = value;
-                            exctChanged = true;
-                        }
-                        break;
-
-                    case kExciterBlendId:
-                        if (paramQueue->getPoint(numPoints - 1, sampleOffset, value) == kResultTrue) {
-                            exct32.blend = value;
-                            exct64.blend = value;
-                            exctChanged = true;
-                        }
-                        break;
-
-                    case kExciterEnabledId:
-                        if (paramQueue->getPoint(numPoints - 1, sampleOffset, value) == kResultTrue) {
-                            exct32.enabled = value > 0.5f;
-                            exct64.enabled = value > 0.5f;
-                        }
-                        break;
-                }
-
-                if (compChanged) {
-                    float sampleRate = (float)this->processSetup.sampleRate;
-
-                    comp32.updateParams(sampleRate);
-                    comp64.updateParams(sampleRate);
-                }
-                if (deesChanged) {
-                    float sampleRate = (float)this->processSetup.sampleRate;
-
-                    dees32.updateParams(sampleRate);
-                    dees64.updateParams(sampleRate);
-                }
-                if (exctChanged) {
-                    exct32.updateParams();
-                    exct64.updateParams();
-                }
-            }
-        }
-}
-
-tresult PLUGIN_API DiaProProcessor::process (Vst::ProcessData& data)
-{
-	/*
-     * Read inputs parameter changes
-     */
-
     /*if (data.inputParameterChanges)
     {
         int32 numParamsChanged = data.inputParameterChanges->getParameterCount ();
@@ -311,6 +105,208 @@ tresult PLUGIN_API DiaProProcessor::process (Vst::ProcessData& data)
 			}
 		}
 	}*/
+	int32 numParamsChanged = paramChanges->getParameterCount ();
+	// for each parameter which are some changes in this audio block:
+	for (int32 i = 0; i < numParamsChanged; i++) {
+		IParamValueQueue* paramQueue = paramChanges->getParameterData(i);
+		if (paramQueue) {
+			ParamValue value;
+			int32 sampleOffset;
+			int32 numPoints = paramQueue->getPointCount();
+			bool compChanged = false;
+			bool deesChanged = false;
+			bool exctChanged = false;
+
+			switch (paramQueue->getParameterId ()) {
+				case kBypassId:
+					if (paramQueue->getPoint (numPoints - 1, sampleOffset, value) == kResultTrue) {
+						bBypass = value > 0.5f;
+					}
+					break;
+
+				case kGainId:
+					// we use in this example only the last point of the queue.
+					// in some wanted case for specific kind of parameter it makes sense to
+					// retrieve all points and process the whole audio block in small blocks.
+					if (paramQueue->getPoint(numPoints - 1, sampleOffset, value) == kResultTrue) {
+						fGain = value;
+					}
+					break;
+
+				case kCompThreshId:
+					if (paramQueue->getPoint(numPoints - 1, sampleOffset, value) == kResultTrue) {
+						comp32.thresh = value;
+						comp64.thresh = value;
+						compChanged = true;
+					}
+					break;
+
+				case kCompAttimeId:
+					if (paramQueue->getPoint(numPoints - 1, sampleOffset, value) == kResultTrue) {
+						comp32.attime = value;
+						comp64.attime = value;
+						compChanged = true;
+					}
+					break;
+
+				case kCompReltimeId:
+					if (paramQueue->getPoint(numPoints - 1, sampleOffset, value) == kResultTrue) {
+						comp32.reltime = value;
+						comp64.reltime = value;
+						compChanged = true;
+					}
+					break;
+
+				case kCompRatioId:
+					if (paramQueue->getPoint(numPoints - 1, sampleOffset, value) == kResultTrue) {
+						comp32.ratio = value;
+						comp64.ratio = value;
+						compChanged = true;
+					}
+					break;
+
+				case kCompKneeId:
+					if (paramQueue->getPoint(numPoints - 1, sampleOffset, value) == kResultTrue) {
+						comp32.knee = value;
+						comp64.knee = value;
+						compChanged = true;
+					}
+					break;
+
+				case kCompMakeupId:
+					if (paramQueue->getPoint(numPoints - 1, sampleOffset, value) == kResultTrue) {
+						comp32.makeup = value;
+						comp64.makeup = value;
+						compChanged = true;
+					}
+					break;
+
+				case kCompMixId:
+					if (paramQueue->getPoint(numPoints - 1, sampleOffset, value) == kResultTrue) {
+						comp32.mix = value;
+						comp64.mix = value;
+						compChanged = true;
+					}
+					break;
+
+				case kCompLookAheadId:
+					if (paramQueue->getPoint(numPoints - 1, sampleOffset, value) == kResultTrue) {
+						comp32.lookahead = value;
+						comp64.lookahead = value;
+						compChanged = true;
+					}
+					break;
+
+				case kCompStereoLinkId:
+					if (paramQueue->getPoint(numPoints - 1, sampleOffset, value) == kResultTrue) {
+						comp32.stereo_link = value > 0.5f;
+						comp64.stereo_link = value > 0.5f;
+					}
+					break;
+
+				case kCompEnabledId:
+					if (paramQueue->getPoint(numPoints - 1, sampleOffset, value) == kResultTrue) {
+						comp32.enabled = value > 0.5f;
+						comp64.enabled = value > 0.5f;
+					}
+					break;
+
+				case kDeEsserThreshId:
+					if (paramQueue->getPoint(numPoints - 1, sampleOffset, value) == kResultTrue) {
+						dees32.thresh = value;
+						dees64.thresh = value;
+						deesChanged = true;
+					}
+					break;
+
+				case kDeEsserFreqId:
+					if (paramQueue->getPoint(numPoints - 1, sampleOffset, value) == kResultTrue) {
+						dees32.freq = value;
+						dees64.freq = value;
+						deesChanged = true;
+					}
+					break;
+
+				case kDeEsserDriveId:
+					if (paramQueue->getPoint(numPoints - 1, sampleOffset, value) == kResultTrue) {
+						dees32.drive = value;
+						dees64.drive = value;
+						deesChanged = true;
+					}
+					break;
+
+				case kDeEsserEnabledId:
+					if (paramQueue->getPoint(numPoints - 1, sampleOffset, value) == kResultTrue) {
+						dees32.enabled = value > 0.5f;
+						dees64.enabled = value > 0.5f;
+					}
+					break;
+
+				case kExciterDriveId:
+					if (paramQueue->getPoint(numPoints - 1, sampleOffset, value) == kResultTrue) {
+						exct32.drive = value;
+						exct64.drive = value;
+						exctChanged = true;
+					}
+					break;
+
+				case kExciterFcId:
+					if (paramQueue->getPoint(numPoints - 1, sampleOffset, value) == kResultTrue) {
+						exct32.fc = value;
+						exct64.fc = value;
+						exctChanged = true;
+					}
+					break;
+
+				case kExciterSatId:
+					if (paramQueue->getPoint(numPoints - 1, sampleOffset, value) == kResultTrue) {
+						exct32.sat = value;
+						exct64.sat = value;
+						exctChanged = true;
+					}
+					break;
+
+				case kExciterBlendId:
+					if (paramQueue->getPoint(numPoints - 1, sampleOffset, value) == kResultTrue) {
+						exct32.blend = value;
+						exct64.blend = value;
+						exctChanged = true;
+					}
+					break;
+
+				case kExciterEnabledId:
+					if (paramQueue->getPoint(numPoints - 1, sampleOffset, value) == kResultTrue) {
+						exct32.enabled = value > 0.5f;
+						exct64.enabled = value > 0.5f;
+					}
+					break;
+			}
+
+			if (compChanged) {
+				float sampleRate = (float)this->processSetup.sampleRate;
+
+				comp32.updateParams(sampleRate);
+				comp64.updateParams(sampleRate);
+			}
+			if (deesChanged) {
+				float sampleRate = (float)this->processSetup.sampleRate;
+
+				dees32.updateParams(sampleRate);
+				dees64.updateParams(sampleRate);
+			}
+			if (exctChanged) {
+				exct32.updateParams();
+				exct64.updateParams();
+			}
+		}
+	}
+}
+
+tresult PLUGIN_API DiaProProcessor::process (Vst::ProcessData& data)
+{
+	/*
+     * Read inputs parameter changes.
+     */
     IParameterChanges* paramChanges = data.inputParameterChanges;
     if (paramChanges) {
         handleParamChanges(paramChanges);

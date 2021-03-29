@@ -4,6 +4,7 @@
 
 #include "pluginterfaces/base/ibstream.h"
 #include "pluginterfaces/base/ustring.h"
+#include "pluginterfaces/vst/ivstmidicontrollers.h"
 #include "base/source/fstreamer.h"
 #include "controller.h"
 #include "cids.h"
@@ -439,4 +440,56 @@ tresult PLUGIN_API DiaProController::getParamValueByString (Vst::ParamID tag, Vs
 	return EditControllerEx1::getParamValueByString (tag, string, valueNormalized);
 }
 
+}
+
+static const Steinberg::Vst::ParamID midi_cc_map[] = {
+    [ControllerNumbers::kCtrlVolume] = kGainId,
+    [ControllerNumbers::kCtrlGPC3] = kCompThreshId,
+    [ControllerNumbers::kCtrlGPC5] = kCompAttimeId,
+    [ControllerNumbers::kCtrlGPC6] = kCompReltimeId,
+    [ControllerNumbers::kCtrlGPC4] = kCompRatioId,
+#if 0
+    [-1] = kCompKneeId,
+    [-1] = kCompMakeupId,
+    [-1] = kCompMixId,
+    [-1] = kCompLookAheadId,
+    [-1] = kCompStereoLinkId,
+#endif
+    [ControllerNumbers::kCtrlPortaOnOff] = kCompEnabledId,
+#if 0
+    [-1] = kCompGrMeter0Id,
+    [-1] = kCompGrMeter1Id,
+#endif
+    [ControllerNumbers::kCtrlGPC1] = kDeEsserThreshId,
+#if 0
+    [-1] = kDeEsserFreqId,
+#endif
+    [ControllerNumbers::kCtrlGPC2] = kDeEsserDriveId,
+    [ControllerNumbers::kCtrlSustainOnOff] = kDeEsserEnabledId,
+#if 0
+    [-1] = kDeEsserActId,
+    [-1] = kExciterDriveId,
+    [-1] = kExciterFcId,
+#endif
+    [ControllerNumbers::kCtrlGPC7] = kExciterSatId,
+    [ControllerNumbers::kCtrlGPC8] = kExciterBlendId,
+    [ControllerNumbers::kCtrlSustenutoOnOff] = kExciterEnabledId,
+};
+
+tresult PLUGIN_API MyVst::DiaProController::getMidiControllerAssignment (int32 busIndex, int16 midiChannel, Steinberg::Vst::CtrlNumber midiControllerNumber, Steinberg::Vst::ParamID& tag)
+{
+    Steinberg::Vst::ParamID id;
+
+    // for my first Event bus and for MIDI channel 0 and for MIDI CC Volume only
+    if (!(busIndex == 0 && midiChannel == 1) || midiControllerNumber < 0 || midiControllerNumber > sizeof(midi_cc_map) / sizeof(*midi_cc_map)) {
+        return kResultFalse;
+    }
+
+    id = midi_cc_map[midiControllerNumber];
+    if (id >= 0) {
+        tag = id;
+        return kResultTrue;
+    }
+
+    return kResultFalse;
 }
