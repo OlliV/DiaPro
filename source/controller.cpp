@@ -132,7 +132,7 @@ tresult PLUGIN_API DiaProController::initialize (FUnknown* context)
     const int32 stepCountToggle = 1;
     ParamValue defaultVal = 0;
     int32 flags = ParameterInfo::kCanAutomate | ParameterInfo::kIsBypass;
-    param = parameters.addParameter(STR16 ("Bypass"), nullptr, stepCountToggle, defaultVal, flags, kBypassId);
+    param = parameters.addParameter(STR16("Bypass"), nullptr, stepCountToggle, defaultVal, flags, kBypassId);
     //param->setUnitID(4);
 
     addVuMeters();
@@ -141,47 +141,55 @@ tresult PLUGIN_API DiaProController::initialize (FUnknown* context)
     // Comp thresh
     param = new GainParameter("Compressor Threshold", ParameterInfo::kCanAutomate, kCompThreshId, COMP_THRESH_MIN, COMP_THRESH_MAX);
     param->setNormalized(COMP_THRESH_DEFAULT_N);
+    param->setPrecision(2);
     //param->setUnitID(1);
     parameters.addParameter(param);
 
     // Comp ratio
     param = new Steinberg::Vst::mda::ScaledParameter(USTRING("Compressor Ratio"), USTRING(":1"), 0, COMP_RATIO_DEFAULT_N, ParameterInfo::kCanAutomate, kCompRatioId, COMP_RATIO_MIN, COMP_RATIO_MAX);
     param->setNormalized(COMP_RATIO_DEFAULT_N);
+    param->setPrecision(1);
     //param->setUnitID(1);
     parameters.addParameter(param);
 
     // Comp knee
 	param = new Steinberg::Vst::mda::ScaledParameter(USTRING("Compressor Knee"), USTRING(""), 0, COMP_KNEE_DEFAULT_N, ParameterInfo::kCanAutomate, kCompKneeId, COMP_KNEE_MIN, COMP_KNEE_MAX);
     param->setNormalized(COMP_KNEE_DEFAULT_N);
+    param->setPrecision(2);
 	//param->setUnitID(1);
     parameters.addParameter(param);
 
     // Comp attack
 	param = new Steinberg::Vst::mda::ScaledParameter(USTRING("Compressor Attack"), USTRING("msec"), 0, COMP_ATTIME_DEFAULT_N, ParameterInfo::kCanAutomate, kCompAttimeId, COMP_ATTIME_MIN, COMP_ATTIME_MAX);
     param->setNormalized(COMP_ATTIME_DEFAULT_N);
+    param->setPrecision(0);
 	//param->setUnitID(1);
     parameters.addParameter(param);
 
     // Comp release
 	param = new Steinberg::Vst::mda::ScaledParameter(USTRING("Compressor Release"), USTRING("msec"), 0, COMP_RELTIME_DEFAULT_N, ParameterInfo::kCanAutomate, kCompReltimeId, COMP_RELTIME_MIN, COMP_RELTIME_MAX);
     param->setNormalized(COMP_RELTIME_DEFAULT_N);
+    param->setPrecision(0);
 	//param->setUnitID(1);
     parameters.addParameter(param);
 
     // Comp gain parameter
     param = new GainParameter("Compressor Makeup Gain", ParameterInfo::kCanAutomate, kCompMakeupId, COMP_MAKEUP_MIN, COMP_MAKEUP_MAX);
+    param->setPrecision(2);
     //param->setUnitID(1);
     parameters.addParameter(param);
 
     // Comp mix
 	param = new Steinberg::Vst::mda::ScaledParameter(USTRING("Compressor Mix"), USTRING(":1"), 0.0f, 1.0f, ParameterInfo::kCanAutomate, kCompMixId);
     param->setNormalized(COMP_MIX_DEFAULT_N);
+    param->setPrecision(2);
 	//param->setUnitID(1);
     parameters.addParameter(param);
 
     // Comp look-ahead
 	param = new Steinberg::Vst::mda::ScaledParameter(USTRING("Compressor Look-Ahead"), USTRING("msec"), 0, COMP_LOOKAHEAD_DEFAULT_N, ParameterInfo::kCanAutomate, kCompLookAheadId, COMP_LOOKAHEAD_MIN, COMP_LOOKAHEAD_MAX);
     param->setNormalized(COMP_LOOKAHEAD_DEFAULT_N);
+    param->setPrecision(0);
 	//param->setUnitID(1);
     parameters.addParameter(param);
 
@@ -193,7 +201,7 @@ tresult PLUGIN_API DiaProController::initialize (FUnknown* context)
                             Vst::ParameterInfo::kCanAutomate, // flags
                             kCompStereoLinkId, // tag
                             0, // unitID TODO 1
-                            STR16("Stereo Link")); // shortTitle
+                            STR16("CompStereoLink")); // shortTitle
 
     // Comp enable
     parameters.addParameter(STR16("Enable Compressor"), // title
@@ -203,22 +211,25 @@ tresult PLUGIN_API DiaProController::initialize (FUnknown* context)
                             Vst::ParameterInfo::kCanAutomate, // flags
                             kCompEnabledId, // tag
                             0, // unitID TODO 1
-                            STR16("Enable")); // shortTitle
+                            STR16("EnComp")); // shortTitle
 
 
     // De-esser threshold
     param = new GainParameter("De-esser Threshold", ParameterInfo::kCanAutomate, kDeEsserThreshId, DEESSER_THRESH_MIN, DEESSER_THRESH_MAX);
+    param->setPrecision(2);
     //param->setUnitID(2);
     parameters.addParameter(param);
 
     // De-esser freq
 	param = new Steinberg::Vst::mda::ScaledParameter(USTRING("De-esser Freq"), USTRING("Hz"), 0, DEESSER_FREQ_DEFAULT_N, ParameterInfo::kCanAutomate, kDeEsserFreqId, DEESSER_FREQ_MIN, DEESSER_FREQ_MAX);
     param->setNormalized(DEESSER_FREQ_DEFAULT_N);
+    param->setPrecision(0);
 	//param->setUnitID(2);
     parameters.addParameter(param);
 
     // De-esser drive
     param = new GainParameter("De-esser Drive", ParameterInfo::kCanAutomate, kDeEsserDriveId, DEESSER_DRIVE_MIN, DEESSER_DRIVE_MAX);
+    param->setPrecision(2);
     //param->setUnitID(2);
     parameters.addParameter(param);
 
@@ -230,7 +241,7 @@ tresult PLUGIN_API DiaProController::initialize (FUnknown* context)
                             Vst::ParameterInfo::kCanAutomate, // flags
                             kDeEsserEnabledId, // tag
                             0, // unitID TODO 2
-                            STR16("Enable")); // shortTitle
+                            STR16("EnDeEsser")); // shortTitle
 
     // De-esser act led
     parameters.addParameter(STR16("DeEsserAct"), nullptr, 0, 0, ParameterInfo::kIsReadOnly, kDeEsserActId);
@@ -238,22 +249,26 @@ tresult PLUGIN_API DiaProController::initialize (FUnknown* context)
 
     // Exciter drive
     param = new GainParameter("Exciter Drive", ParameterInfo::kCanAutomate, kExciterDriveId, EXCITER_DRIVE_MIN, EXCITER_DRIVE_MAX);
+    param->setPrecision(2);
     //param->setUnitID(3);
     parameters.addParameter(param);
 
     // Exciter fc
 	param = new Steinberg::Vst::mda::ScaledParameter(USTRING("Exciter fc"), USTRING("Hz"), 0, EXCITER_FC_DEFAULT_N, ParameterInfo::kCanAutomate, kExciterFcId, EXCITER_FC_MIN, EXCITER_FC_MAX);
     param->setNormalized(EXCITER_FC_DEFAULT_N);
+    param->setPrecision(0);
 	//param->setUnitID(3);
     parameters.addParameter(param);
 
     // Exciter saturation
     param = new GainParameter("Exciter Saturation", ParameterInfo::kCanAutomate, kExciterSatId, EXCITER_SAT_MIN, EXCITER_SAT_MAX);
+    param->setPrecision(2);
     //param->setUnitID(3);
     parameters.addParameter(param);
 
     // Exciter blend
     param = new GainParameter("Exciter Blend", ParameterInfo::kCanAutomate, kExciterBlendId, EXCITER_BLEND_MIN, EXCITER_BLEND_MAX);
+    param->setPrecision(2);
     //param->setUnitID(3);
     parameters.addParameter(param);
 
@@ -265,11 +280,12 @@ tresult PLUGIN_API DiaProController::initialize (FUnknown* context)
                             Vst::ParameterInfo::kCanAutomate, // flags
                             kExciterEnabledId, // tag
                             0, // unitID TODO 3
-                            STR16("Enable")); // shortTitle
+                            STR16("EnExciter")); // shortTitle
 
 
     // Output Gain parameter
     param = new GainParameter("Gain", ParameterInfo::kCanAutomate, kGainId, GAIN_MIN, GAIN_MAX);
+    param->setPrecision(2);
     //param->setUnitID(4);
     parameters.addParameter(param);
 
