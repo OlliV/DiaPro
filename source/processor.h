@@ -9,6 +9,7 @@
 #include "compressor.h"
 #include "deesser.h"
 #include "exciter.h"
+#include "vu.h"
 
 namespace MyVst {
 
@@ -68,9 +69,6 @@ protected:
     template <typename SampleType>
     void processCompressor (SampleType** inOut, int nrChannels, int nrSamples);
 
-    template <typename SampleType>
-    void processVuPPM (SampleType** in, float *vuPPM, int nrChannels, int nrSamples);
-
     void handleParamChanges(Steinberg::Vst::IParameterChanges* paramChanges);
 
     /*
@@ -88,6 +86,8 @@ protected:
     Exciter    <Sample64> exct64;
 
     // VU
+    VU vuIn;
+    VU vuOut;
 	float fVuPPMInOld[2];
 	float fVuPPMOutOld[2];
 

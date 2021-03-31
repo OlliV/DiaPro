@@ -57,6 +57,9 @@ tresult PLUGIN_API DiaProProcessor::setActive (TBool state)
     if (state) {
         float sampleRate = (float)this->processSetup.sampleRate;
 
+        vuIn.setSampleRate(sampleRate);
+        vuOut.setSampleRate(sampleRate);
+
         dees32.updateParams(sampleRate);
         dees32.reset();
         comp32.updateParams(sampleRate);
@@ -342,12 +345,6 @@ tresult PLUGIN_API DiaProProcessor::process (Vst::ProcessData& data)
     // Normally the output is not silenced
     data.outputs[0].silenceFlags = 0;
 
-    float fVuPPMIn[2];
-    float fVuPPMOut[2];
-
-    memcpy(fVuPPMIn, fVuPPMInOld, sizeof(fVuPPMIn));
-    memcpy(fVuPPMOut, fVuPPMOutOld, sizeof(fVuPPMOut));
-
     /*
      * We first copy the input bufs to the outputs if necessary.
      */
@@ -360,7 +357,7 @@ tresult PLUGIN_API DiaProProcessor::process (Vst::ProcessData& data)
     if (data.symbolicSampleSize == kSample32) {
         int nrSamples = data.numSamples;
 
-        processVuPPM<Sample32>((Sample32**)in, fVuPPMIn, nrChannels, nrSamples);
+        vuIn.process<Sample32>((Sample32**)in, nrChannels, nrSamples);
 
         if (!bBypass) {
             dees32.process((Sample32**)out, nrChannels, nrSamples);
@@ -369,11 +366,11 @@ tresult PLUGIN_API DiaProProcessor::process (Vst::ProcessData& data)
             processGain<Sample32>((Sample32**)out, nrChannels, nrSamples, fGain);
         }
 
-        processVuPPM<Sample32>((Sample32**)out, fVuPPMOut, nrChannels, nrSamples);
+        vuOut.process<Sample32>((Sample32**)out, nrChannels, nrSamples);
     } else {
         int nrSamples = data.numSamples;
 
-        processVuPPM<Sample64>((Sample64**)in, fVuPPMIn, nrChannels, nrSamples);
+        vuIn.process<Sample64>((Sample64**)in, nrChannels, nrSamples);
 
         if (!bBypass) {
             dees64.process((Sample64**)out, nrChannels, nrSamples);
@@ -382,7 +379,7 @@ tresult PLUGIN_API DiaProProcessor::process (Vst::ProcessData& data)
             processGain<Sample64>((Sample64**)out, nrChannels, nrSamples, fGain);
         }
 
-        processVuPPM<Sample64>((Sample64**)out, fVuPPMOut, nrChannels, nrSamples);
+        vuOut.process<Sample64>((Sample64**)out, nrChannels, nrSamples);
     }
 
     /*
@@ -396,22 +393,22 @@ tresult PLUGIN_API DiaProProcessor::process (Vst::ProcessData& data)
 
         paramQueue = outParamChanges->addParameterData(kVuPPMIn0Id, index);
         if (paramQueue) {
-            paramQueue->addPoint(0, fVuPPMIn[0], index);
+            paramQueue->addPoint(0, vuIn.vuPPM[0], index);
         }
 
         paramQueue = outParamChanges->addParameterData(kVuPPMIn1Id, index);
         if (paramQueue) {
-            paramQueue->addPoint(0, fVuPPMIn[1], index);
+            paramQueue->addPoint(0, vuIn.vuPPM[1], index);
         }
 
         paramQueue = outParamChanges->addParameterData(kVuPPMOut0Id, index);
         if (paramQueue) {
-            paramQueue->addPoint(0, fVuPPMOut[0], index);
+            paramQueue->addPoint(0, vuOut.vuPPM[0], index);
         }
 
         paramQueue = outParamChanges->addParameterData(kVuPPMOut1Id, index);
         if (paramQueue) {
-            paramQueue->addPoint(0, fVuPPMOut[1], index);
+            paramQueue->addPoint(0, vuOut.vuPPM[1], index);
         }
 
         paramQueue = outParamChanges->addParameterData(kCompGrMeter0Id, index);
@@ -429,8 +426,6 @@ tresult PLUGIN_API DiaProProcessor::process (Vst::ProcessData& data)
             paramQueue->addPoint(0, (data.symbolicSampleSize == kSample32) ? (Sample32)dees32.act : (Sample64)dees64.act, index);
         }
     }
-    memcpy(fVuPPMInOld, fVuPPMIn, sizeof(fVuPPMInOld));
-    memcpy(fVuPPMOutOld, fVuPPMOut, sizeof(fVuPPMOutOld));
 
 	return kResultOk;
 }
@@ -558,6 +553,9 @@ tresult PLUGIN_API DiaProProcessor::setState (IBStream* state)
     fGain = savedGain;
 
     float sampleRate = (float)this->processSetup.sampleRate;
+
+    vuIn.setSampleRate(sampleRate);
+    vuOut.setSampleRate(sampleRate);
 
     comp32.thresh = savedCompThresh;
     comp32.attime = savedComAttime;
