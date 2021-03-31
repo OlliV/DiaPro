@@ -10,6 +10,15 @@ namespace MyVst {
 using namespace Steinberg;
 using namespace Steinberg::Vst;
 
+enum DiaProUnitId {
+    DiaProRootUnitId = 0,
+    DiaProCompressorUnitId,
+    DiaProDeEsserUnitId,
+    DiaProExciterUnitId,
+    DiaProOutputUnitId,
+    DiaProNrUnits
+};
+
 //------------------------------------------------------------------------
 //  DiaProController
 //------------------------------------------------------------------------
@@ -20,7 +29,7 @@ public:
 	~DiaProController () SMTG_OVERRIDE = default;
 
     // Create function
-	static Steinberg::FUnknown* createInstance (void* /*context*/)
+	static FUnknown* createInstance (void* /*context*/)
 	{
 		return (IEditController*)new DiaProController;
 	}
@@ -49,6 +58,7 @@ public:
  	//---Interface---------
 	DEFINE_INTERFACES
         DEF_INTERFACE (IMidiMapping)
+        DEF_INTERFACE (IUnitInfo)
 	END_DEFINE_INTERFACES (EditController)
     DELEGATE_REFCOUNT (EditController)
 
