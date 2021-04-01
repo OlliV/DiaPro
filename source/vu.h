@@ -10,7 +10,8 @@ public:
 
     void setSampleRate(float sampleRate)
     {
-        decay = exp(-500.0f / sampleRate);
+        attack = exp(-sampleRate / 0.5e6f);
+        release = exp(-sampleRate / 2.5e6f);
     }
 
     template <typename SampleType>
@@ -20,24 +21,27 @@ public:
 
     	for (int ch = 0; ch < nrChannels; ch++) {
             SampleType newPeak = 0;
-    		SampleType *ptrIn = (SampleType*)in[ch];
+            SampleType *ptrIn = (SampleType*)in[ch];
             int i = nrSamples;
 
     		while (i--) {
-    		    SampleType tmp = (*ptrIn++);
+                SampleType xn = (*ptrIn++);
 
-    			if (tmp > newPeak) {
-    				newPeak = tmp;
+                if (xn > newPeak) {
+                    newPeak = xn;
                 }
     		}
-            if (newPeak > vuPPM[ch]) {
-                vuPPM[ch] = newPeak;
-            } else {
-                vuPPM[ch] *= decay;
-            }
+
+            float tmp = vuPPM[ch];
+            float decay = newPeak > tmp ? attack : release;
+            tmp *= decay;
+            tmp += newPeak * (1 - decay);
+            vuPPM[ch] = tmp;
     	}
     }
+
 protected:
-    float decay;
+    float attack;
+    float release;
 };
 }
