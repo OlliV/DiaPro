@@ -2,14 +2,33 @@
 
 #include <string.h>
 
+#define POW2_CEIL(v) (1 + \
+(((((((((v) - 1) | (((v) - 1) >> 0x10) | \
+      (((v) - 1) | (((v) - 1) >> 0x10) >> 0x08)) | \
+     ((((v) - 1) | (((v) - 1) >> 0x10) | \
+      (((v) - 1) | (((v) - 1) >> 0x10) >> 0x08)) >> 0x04))) | \
+   ((((((v) - 1) | (((v) - 1) >> 0x10) | \
+      (((v) - 1) | (((v) - 1) >> 0x10) >> 0x08)) | \
+     ((((v) - 1) | (((v) - 1) >> 0x10) | \
+      (((v) - 1) | (((v) - 1) >> 0x10) >> 0x08)) >> 0x04))) >> 0x02))) | \
+ ((((((((v) - 1) | (((v) - 1) >> 0x10) | \
+      (((v) - 1) | (((v) - 1) >> 0x10) >> 0x08)) | \
+     ((((v) - 1) | (((v) - 1) >> 0x10) | \
+      (((v) - 1) | (((v) - 1) >> 0x10) >> 0x08)) >> 0x04))) | \
+   ((((((v) - 1) | (((v) - 1) >> 0x10) | \
+      (((v) - 1) | (((v) - 1) >> 0x10) >> 0x08)) | \
+     ((((v) - 1) | (((v) - 1) >> 0x10) | \
+      (((v) - 1) | (((v) - 1) >> 0x10) >> 0x08)) >> 0x04))) >> 0x02))) >> 0x01))))
+
 namespace MyVst {
 using namespace Steinberg::Vst;
 
 template <typename SampleType, size_t N>
 class Delay {
-    SampleType ddl[N];
-    size_t len;
-    size_t ddl_i;
+    SampleType ddl[POW2_CEIL(N)];
+    int len;
+    int wr;
+    int rd;
 public:
     Delay()
     {
@@ -19,40 +38,29 @@ public:
 
     void set_len(size_t nlen)
     {
-        size_t olen = len;
-
         len = std::min(nlen, sizeof(ddl) / sizeof(*ddl));
-
-        // Smoothen out the transition
-        if (olen != len) {
-            for (size_t i = 0; i < olen; i++) {
-                ddl[ddl_i++] = 0.5f * (ddl[ddl_i] * ddl[i]);
-
-                if (ddl_i >= len) {
-                    ddl_i = 0;
-                }
-            }
-        }
-
-        if (ddl_i >= len) {
-            ddl_i = 0;
-        }
     }
 
     void reset(void)
     {
-        ddl_i = 0;
+        wr = 0;
+        rd = 0;
         memset(ddl, 0, sizeof(ddl));
     }
 
     SampleType process(SampleType xn)
     {
-        SampleType yn = ddl[ddl_i];
-        ddl[ddl_i++] = xn;
+        const int mask = sizeof(ddl) / sizeof(*ddl) - 1;
 
-        if (ddl_i >= len) {
-            ddl_i = 0;
+        if (len == 0) {
+            return xn;
         }
+
+        wr = (wr + 1) & mask;
+        rd = (wr - len) & mask;
+
+        SampleType yn = ddl[rd];
+        ddl[wr] = xn;
 
         return yn;
     }
