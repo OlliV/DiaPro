@@ -57,6 +57,8 @@ smtg_add_vst3_snapshot(${target} resource/95C62AD875FF5DFC8D89C9C51E998E0D_snaps
 smtg_add_vst3_snapshot(${target} resource/95C62AD875FF5DFC8D89C9C51E998E0D_snapshot_2.0x.png)
 
 if(SMTG_MAC)
+    target_compile_options(${target} PRIVATE -Wall -Wextra)
+
     set_target_properties(${target} PROPERTIES XCODE_ATTRIBUTE_EXPORTED_SYMBOLS_FILE macexport.exp)
 
     # To find fft installed with Brew

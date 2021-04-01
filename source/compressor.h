@@ -99,7 +99,7 @@ private:
     } proc[2];
 
     SampleType detect(struct proc *p, SampleType xn);
-    SampleType comp_gr(struct proc *p, SampleType det);
+    SampleType comp_gr(SampleType det);
     void update_gr_meter(int ch, SampleType gr);
 };
 
@@ -113,10 +113,10 @@ void Compressor<SampleType>::updateParams(float sampleRate)
     cooked.cthreshv = exp(cooked.cthresh_db * DB2LOG);
     cooked.cmakeup = normdb2factor(makeup, COMP_MAKEUP_MIN, COMP_MAKEUP_MAX);
 
-    unsigned nlookahead = (unsigned)(PLAIN(lookahead, COMP_LOOKAHEAD_MIN, COMP_LOOKAHEAD_MAX) * 0.001 * sampleRate);
-    proc[0].delay.set_len(nlookahead);
-    proc[1].delay.set_len(nlookahead);
-    cooked.nlookahead = nlookahead;
+    const float lookahead_s = PLAIN(lookahead, COMP_LOOKAHEAD_MIN, COMP_LOOKAHEAD_MAX) * 0.001f;
+    proc[0].delay.set(sampleRate, lookahead_s);
+    proc[1].delay.set(sampleRate, lookahead_s);
+    cooked.nlookahead = (unsigned)round(lookahead_s * sampleRate);
 
     cooked.gr_meter_decay = exp(1.0f / (1.0f * sampleRate));
 }
@@ -146,7 +146,7 @@ SampleType Compressor<SampleType>::detect(struct proc *p, SampleType xn)
 }
 
 template <typename SampleType>
-SampleType Compressor<SampleType>::comp_gr(struct proc *p, SampleType det)
+SampleType Compressor<SampleType>::comp_gr(SampleType det)
 {
     const SampleType det_db = det <= 0.0f ? -96.0f : log(det) * LOG2DB;
     const SampleType overdb = 2.08136898f * log(det / cooked.cthreshv) * LOG2DB;
@@ -200,7 +200,7 @@ void Compressor<SampleType>::process(SampleType** inOut, int nrChannels, int nrS
             struct proc *p = &proc[0];
 
             const SampleType det = detect(p, 0.5 * (xnl + xnr));
-            const SampleType gr = comp_gr(p, det);
+            const SampleType gr = comp_gr(det);
 
             /*
              * The compressor is always running to make on/off transition smooth
@@ -228,7 +228,7 @@ void Compressor<SampleType>::process(SampleType** inOut, int nrChannels, int nrS
                 SampleType s = *pSample;
 
                 const SampleType det = detect(p, s);
-                const SampleType gr = comp_gr(p, det);
+                const SampleType gr = comp_gr(det);
 
                 /*
                  * The compressor is always running to make on/off transition smooth
