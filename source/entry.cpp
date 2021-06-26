@@ -58,10 +58,10 @@ BEGIN_FACTORY_DEF ("Olli Vanhoja",
 	DEF_CLASS2 (INLINE_UID_FROM_FUID(kDiaProProcessorUID),
 				PClassInfo::kManyInstances,	// cardinality
 				kVstAudioEffectClass,	// the component category (do not changed this)
-				stringPluginName,		// here the Plug-in name (to be changed)
+				stringPluginName,		// here the Plug-in name
 				Vst::kDistributable,	// means that component and controller could be distributed on different computers
-				DiaProVST3Category, // Subcategory for this Plug-in (to be changed)
-				FULL_VERSION_STR,		// Plug-in version (to be changed)
+				DiaProVST3Category, // Subcategory for this Plug-in
+				FULL_VERSION_STR,		// Plug-in version
 				kVstVersionString,		// the VST 3 SDK version (do not changed this, use always this define)
 				DiaProProcessor::createInstance)	// function pointer called when this component should be instantiated
 
@@ -72,7 +72,7 @@ BEGIN_FACTORY_DEF ("Olli Vanhoja",
 				stringPluginName "Controller",	// controller name (could be the same than component name)
 				0,						// not used here
 				"",						// not used here
-				FULL_VERSION_STR,		// Plug-in version (to be changed)
+				FULL_VERSION_STR,		// Plug-in version
 				kVstVersionString,		// the VST 3 SDK version (do not changed this, use always this define)
 				DiaProController::createInstance)// function pointer called when this component should be instantiated
 
