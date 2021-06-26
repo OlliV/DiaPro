@@ -88,11 +88,11 @@ x(n) -+-->|         Z^-D         |--+-->| DCA >--->|    >----->| m >----/     *
 
 **Presets for lazy people**
 
-| Use case    | Ratio    | Knee | Attack [ms] | Release [ms] | Mix  |
-|-------------|----------|------|-------------|--------------|------|
-| Vocals      |          |      |      2 - 10 |              |      |
-| Instruments |          |      |         40  |      60      |      |
-| Drums       |          |    0 |             |              | 0.5  | 
+| Use case    | Ratio    | Knee | Attack [ms] | Release [ms] | Look-Ahead | Makeup | Mix |
+|-------------|----------|------|-------------|--------------|------------|--------|-----|
+| Vocals      |      1.5 | 0.95 |      2 - 10 |           40 |        >=1 |    2.0 | 1.0 |
+| Instruments |          |      |          40 |           60 |          0 |        |     |
+| Drums       |          |    0 |             |              |          0 |        | 0.5 |
 
 **Enable**
 
