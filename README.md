@@ -276,6 +276,7 @@ Now you are ready to build the actual plugin.
 
 ```
 mkdir build
+cd build
 cmake -DSMTG_RUN_VST_VALIDATOR=OFF -DSMTG_ADD_VSTGUI=ON -G"Xcode" -DCMAKE_BUILD_TYPE=Debug ..
 cmake --build .
 ```
