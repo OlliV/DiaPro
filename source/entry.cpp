@@ -2,7 +2,6 @@
 // Copyright(c) 2021 Olli Vanhoja.
 //------------------------------------------------------------------------
 
-#include "public.sdk/source/vst/vst2wrapper/vst2wrapper.h"
 #include "processor.h"
 #include "controller.h"
 #include "cids.h"
@@ -32,22 +31,6 @@ bool DeinitModule ()
 
 using namespace Steinberg::Vst;
 using namespace MyVst;
-
-//------------------------------------------------------------------------
-//  VST Plug-in Entry
-//------------------------------------------------------------------------
-// Windows: do not forget to include a .def file in your project to export
-// GetPluginFactory function!
-//------------------------------------------------------------------------
-
-::AudioEffect* createEffectInstance (audioMasterCallback audioMaster)
-{
-    return Steinberg::Vst::Vst2Wrapper::create (
-                                                GetPluginFactory (),
-                                                kDiaProProcessorUID,
-                                                'DiaP', /* Fake ID */
-                                                audioMaster);
-}
 
 BEGIN_FACTORY_DEF ("Olli Vanhoja",
 			       "https://olli.vanhoja.net",

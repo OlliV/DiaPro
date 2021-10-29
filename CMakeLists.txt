@@ -20,7 +20,6 @@ smtg_enable_vst3_sdk()
 add_compile_definitions(HAVE_FFTW)
 
 smtg_add_vst3plugin(${target}
-    ${vst3sdk_SOURCE_DIR}/public.sdk/source/vst/vst2wrapper/vst2wrapper.sdk.cpp
     source/cids.h
     source/controller.cpp
     source/controller.h

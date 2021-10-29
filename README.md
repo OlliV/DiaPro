@@ -1,9 +1,9 @@
 DiaPro
 ======
 
-DiaPro is VST a dialog/vocal processor supporting VST2.x and VST3. While the
-effect is mostly designed dialog and vocals in mind, there is absolutely no
-reason why it couldn't be used for any purpose.
+DiaPro is VST a dialog/vocal processor supporting VST3 API. While the effect is
+mostly designed dialog and vocals in mind, there is absolutely no reason why it
+couldn't be used for any purpose.
 
 Each unit of the processor is documented separately and at the beginning
 of each section there are some presets given as starting point. These
@@ -243,24 +243,6 @@ Download [VST 3 Audio Plug-Ins SDK](https://www.steinberg.net/en/company/develop
 and extract it anywhere you wish, but remember that the directory you choose
 will be the "installation path" for the SDK.
 
-**VST2.x support**
-
-Run `copy_vst2_to_vst3_sdk.sh` in the VST3 SDK directory.
-
-The latest version of the SDK is missing some files for the VST2.x wrapper
-because Steinberg has officially dropped the VST2.x support. You can still
-download and older version of the SDK from
-[here](https://www.steinberg.net/sdk_downloads/vstsdk366_27_06_2016_build_61.zip)
-
-Copy `plugininterfaces/vst2.x` from the old version to the new version under
-`../VST_SDK/VST3_SDK/pluginterfaces`.
-
-Add  `_VSTPluginMain` as the last line of `VST_SDK/VST3_SDK/public.sdk/source/main/macexport.exp`
-as the SDK developers forgot to include the main function symbol for VST2.x plug-ins.
-
-**NOTE** that you may not be legally allowed to distribute the binaries built
-this way as the VST2.x files are not under an open source license.
-
 **fftw**
 
 `fftw` is required by the exciter unit of this plugin effect. On MacOS it can be
@@ -294,12 +276,6 @@ Some pointers:
 Some DAWs don't look from all possible "legal" VST paths nor it's configurable
 You might need to copy the symlink or the bundle/binary to a path that your DAW
 supports.
-
-**VST2.x support doesn't work**
-
-It's probably because VST2.x-only DAWs and host don't usually look from VST3
-paths nor for bundles/files named `*.vst3`. Make a copy of the file into a
-VST2.x path and change the file extension to just `.vst`.
 
 Editing the Interface
 ---------------------
