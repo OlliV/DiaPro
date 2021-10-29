@@ -1,9 +1,9 @@
 cmake_minimum_required(VERSION 3.14.0)
 
-set(CMAKE_OSX_DEPLOYMENT_TARGET "10.10" CACHE STRING "macOS deployment target")
+set(CMAKE_OSX_DEPLOYMENT_TARGET "11.6" CACHE STRING "macOS deployment target")
 option(SMTG_ADD_VSTGUI "Add VSTGUI Support" ON)
 
-set(vst3sdk_SOURCE_DIR /Users/hbp/repos/vst-dev/VST_SDK/VST3_SDK)
+set(vst3sdk_SOURCE_DIR ../VST_SDK/VST3_SDK)
 if(NOT vst3sdk_SOURCE_DIR)
     message(FATAL_ERROR "Path to VST3 SDK is empty!")
 endif()
