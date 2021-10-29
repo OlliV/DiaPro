@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.14.0)
 
 set(CMAKE_OSX_DEPLOYMENT_TARGET "11.6" CACHE STRING "macOS deployment target")
+set(CMAKE_OSX_ARCHITECTURES "x86_64;arm64" CACHE STRING "")
 option(SMTG_ADD_VSTGUI "Add VSTGUI Support" ON)
 
 set(vst3sdk_SOURCE_DIR ../VST_SDK/VST3_SDK)
@@ -38,7 +39,8 @@ target_sources(${target}
 target_link_libraries(${target}
     PRIVATE
     vstgui_support
-    /usr/local/lib/libfftw3.a # TODO Brew specific
+    ${PROJECT_SOURCE_DIR}/fftw/fftw_big_sur/3.3.10/lib/libfftw3.a
+    ${PROJECT_SOURCE_DIR}/fftw/fftw_arm64_big_sur/3.3.10/lib/libfftw3.a
     )
 
 smtg_add_vst3_resource(${target} "resource/editor.uidesc")
@@ -57,11 +59,8 @@ smtg_add_vst3_snapshot(${target} resource/95C62AD875FF5DFC8D89C9C51E998E0D_snaps
 
 if(SMTG_MAC)
     target_compile_options(${target} PRIVATE -Wall -Wextra)
-
     set_target_properties(${target} PROPERTIES XCODE_ATTRIBUTE_EXPORTED_SYMBOLS_FILE macexport.exp)
-
-    # To find fft installed with Brew
-    include_directories(AFTER /usr/local/include)
+    include_directories(AFTER fftw/fftw_big_sur/3.3.10/include)
 endif()
 
 target_link_libraries(${target}

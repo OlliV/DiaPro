@@ -245,11 +245,14 @@ will be the "installation path" for the SDK.
 
 **fftw**
 
-`fftw` is required by the exciter unit of this plugin effect. On MacOS it can be
-installed using [Brew](https://brew.sh/).
+`fftw` is required by the exciter unit of this plugin effect.
+
+On MacOS you can download `fftw` using the script in the `fftw` directory. This
+will download and extract `fftw` for both x86-64 and ARM64 targets.
 
 ```
-brew install fftw
+cd fftw
+./runme.sh
 ```
 
 ### Running the build
@@ -263,9 +266,19 @@ cmake -DSMTG_RUN_VST_VALIDATOR=OFF -DSMTG_ADD_VSTGUI=ON -G"Xcode" -DCMAKE_BUILD_
 cmake --build .
 ```
 
+or make a release build by running:
+
+```
+mkdir build
+cd build
+cmake -DSMTG_RUN_VST_VALIDATOR=OFF -DSMTG_ADD_VSTGUI=ON -G"Xcode" -DCMAKE_BUILD_TYPE=Release ..
+cmake --build . --config Release
+```
+
 If everything went fine the build script should make a symlink in the system VST
 plugin path, pointing to the build result of the build. Meaning that you can now
-start your DAW/VST host and it should be able to discover the plugin.
+start your DAW/VST host and it should be able to discover the plugin. The
+resulting bundle should work on both x86-64 and ARM64 (M1) Macs.
 
 ### Troubleshooting
 
