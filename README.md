@@ -280,6 +280,29 @@ plugin path, pointing to the build result of the build. Meaning that you can now
 start your DAW/VST host and it should be able to discover the plugin. The
 resulting bundle should work on both x86-64 and ARM64 (M1) Macs.
 
+If you want to sign the binary for distribution you should run `cmake` with
+`-DSMTG_DISABLE_CODE_SIGNING=ON` but unfortunately there seems to be a bug in
+the build system and this option doesn't disable the signing anyway. The build
+system also allows signing with your certificate after the build but
+unfortunately Xcode doesn't allow that neither, you could do this by setting
+`-DSMTG_IOS_DEVELOPMENT_TEAM=team` and `-DSMTG_CODE_SIGN_IDENTITY_MAC=ident` but
+you'll be greeted by the following error:
+
+```
+error: DiaPro has conflicting provisioning settings. DiaPro is automatically signed for development, but a conflicting code signing identity Apple Distribution has been manually specified. Set the code signing identity value to "Apple Development" in the build settings editor, or switch to manual signing in the Signing & Capabilities editor.
+```
+
+Therefore the best way to sign the VST is by replacing the dev signature after
+the build, by running:
+
+```
+codesign --force -s "ident" VST3/Release/DiaPro.vst3
+codesign --force -s "ident" ~/Library/Audio/Plug-Ins/VST3/DiaPro.vst3
+```
+
+Note that you may need to download the root certificate manually from
+[here](https://developer.apple.com/support/expiration/).
+
 ### Troubleshooting
 
 Some pointers:
