@@ -280,28 +280,46 @@ plugin path, pointing to the build result of the build. Meaning that you can now
 start your DAW/VST host and it should be able to discover the plugin. The
 resulting bundle should work on both x86-64 and ARM64 (M1) Macs.
 
-If you want to sign the binary for distribution you should run `cmake` with
-`-DSMTG_DISABLE_CODE_SIGNING=ON` but unfortunately there seems to be a bug in
-the build system and this option doesn't disable the signing anyway. The build
-system also allows signing with your certificate after the build but
-unfortunately Xcode doesn't allow that neither, you could do this by setting
-`-DSMTG_IOS_DEVELOPMENT_TEAM=team` and `-DSMTG_CODE_SIGN_IDENTITY_MAC=ident` but
-you'll be greeted by the following error:
+#### Code signing
+
+If you want to sign the binary for distribution the easiest way to sign and
+staple the VST3 plugin is shown here.
+
+First you should create an Application Specific Password for the project as
+explained [here](https://support.apple.com/en-us/HT204397).
+Then run the following command to store the credentials:
 
 ```
-error: DiaPro has conflicting provisioning settings. DiaPro is automatically signed for development, but a conflicting code signing identity Apple Distribution has been manually specified. Set the code signing identity value to "Apple Development" in the build settings editor, or switch to manual signing in the Signing & Capabilities editor.
+xcrun notarytool store-credentials --apple-id "youremail" --team-id "team-id"
 ```
 
-Therefore the best way to sign the VST is by replacing the dev signature after
-the build, by running:
+This step needs to be done only once.
+
+Next you need to sign the VST3 plugin:
 
 ```
-codesign --force -s "ident" VST3/Release/DiaPro.vst3
-codesign --force -s "ident" ~/Library/Audio/Plug-Ins/VST3/DiaPro.vst3
+codesign --force -s "Developer ID Application" VST3/Release/DiaPro.vst3
 ```
 
-Note that you may need to download the root certificate manually from
-[here](https://developer.apple.com/support/expiration/).
+Then zip the plugin and run `notarytool` for the zip file:
+
+```
+/usr/bin/ditto -c -k --keepParent ~/Library/Audio/Plug-Ins/VST3/DiaPro.vst3 DiaPro.zip
+xcrun notarytool submit DiaPro.zip --keychain-profile "DiaPro" --wait
+```
+
+If that step passed then you can staple the plugin:
+
+```
+ xcrun stapler staple VST3/Release/DiaPro.vst3
+```
+
+and remove the intermediate zip:
+
+```
+rm DiaPro.zip
+```
+
 
 ### Troubleshooting
 
