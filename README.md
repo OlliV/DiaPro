@@ -304,7 +304,7 @@ codesign --force -s "Developer ID Application" VST3/Release/DiaPro.vst3
 Then zip the plugin and run `notarytool` for the zip file:
 
 ```
-/usr/bin/ditto -c -k --keepParent ~/Library/Audio/Plug-Ins/VST3/DiaPro.vst3 DiaPro.zip
+/usr/bin/ditto -c -k --keepParent VST3/Release/DiaPro.vst3 DiaPro.zip
 xcrun notarytool submit DiaPro.zip --keychain-profile "DiaPro" --wait
 ```
 
