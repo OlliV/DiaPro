@@ -1,15 +1,17 @@
-cmake_minimum_required(VERSION 3.14.0)
+cmake_minimum_required(VERSION 3.25.0)
 
-set(CMAKE_OSX_DEPLOYMENT_TARGET "11.6" CACHE STRING "macOS deployment target")
-set(CMAKE_OSX_ARCHITECTURES "x86_64;arm64" CACHE STRING "")
+set(CMAKE_OSX_DEPLOYMENT_TARGET "15.4" CACHE STRING "macOS deployment target")
+set(CMAKE_OSX_ARCHITECTURES "arm64" CACHE STRING "")
 option(SMTG_ADD_VSTGUI "Add VSTGUI Support" ON)
 
-set(vst3sdk_SOURCE_DIR ../VST_SDK/VST3_SDK)
+set(vst3sdk_SOURCE_DIR ../VST_SDK/vst3sdk)
 if(NOT vst3sdk_SOURCE_DIR)
     message(FATAL_ERROR "Path to VST3 SDK is empty!")
 endif()
 
-project(DiaPro)
+project(DiaPro 
+    VERSION 2.1.0
+)
 set(target DiaPro)
   
 set(SMTG_VSTGUI_ROOT "${vst3sdk_SOURCE_DIR}")
@@ -54,8 +56,11 @@ smtg_add_vst3_resource(${target} "resource/vu_on.png")
 smtg_add_vst3_resource(${target} "resource/gr_off.png")
 smtg_add_vst3_resource(${target} "resource/gr_on.png")
 
-smtg_add_vst3_snapshot(${target} resource/95C62AD875FF5DFC8D89C9C51E998E0D_snapshot.png)
-smtg_add_vst3_snapshot(${target} resource/95C62AD875FF5DFC8D89C9C51E998E0D_snapshot_2.0x.png)
+smtg_target_add_plugin_snapshots(${target} 
+    RESOURCES 
+    resource/95C62AD875FF5DFC8D89C9C51E998E0D_snapshot.png
+    resource/95C62AD875FF5DFC8D89C9C51E998E0D_snapshot_2.0x.png
+)
 
 if(SMTG_MAC)
     target_compile_options(${target} PRIVATE -Wall -Wextra)
@@ -69,9 +74,9 @@ target_link_libraries(${target}
 )
 
 if(SMTG_MAC)
-    smtg_set_bundle(${target} INFOPLIST 
-        "${CMAKE_CURRENT_LIST_DIR}/resource/Info.plist" 
-        PREPROCESS
+    smtg_target_set_bundle(${target} 
+        BUNDLE_IDENTIFIER net.vanhoja.olli.diapro
+        COMPANY_NAME "Olli Vanhoja"
     )
 elseif(SMTG_WIN)
     target_sources(${target} PRIVATE 

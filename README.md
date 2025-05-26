@@ -262,8 +262,8 @@ Now you are ready to build the actual plugin.
 ```
 mkdir build
 cd build
-cmake -DSMTG_RUN_VST_VALIDATOR=OFF -DSMTG_ADD_VSTGUI=ON -G"Xcode" -DCMAKE_BUILD_TYPE=Debug ..
-cmake --build .
+cmake -DSMTG_RUN_VST_VALIDATOR=OFF -DSMTG_ADD_VSTGUI=ON -GXcode -DCMAKE_BUILD_TYPE=Debug -DCMAKE_OSX_ARCHITECTURES="arm64" -DSMTG_CREATE_PLUGIN_LINK=OFF ..
+cmake --build . -t DiaPro
 ```
 
 or make a release build by running:
@@ -272,13 +272,16 @@ or make a release build by running:
 mkdir build
 cd build
 cmake -DSMTG_RUN_VST_VALIDATOR=OFF -DSMTG_ADD_VSTGUI=ON -G"Xcode" -DCMAKE_BUILD_TYPE=Release ..
-cmake --build . --config Release
+cmake -DSMTG_RUN_VST_VALIDATOR=OFF -DSMTG_ADD_VSTGUI=ON -GXcode -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES="arm64" -DSMTG_CREATE_PLUGIN_LINK=OFF ..
+cmake --build . --config Release -t DiaPro
 ```
 
-If everything went fine the build script should make a symlink in the system VST
+~~If everything went fine the build script should make a symlink in the system VST
 plugin path, pointing to the build result of the build. Meaning that you can now
-start your DAW/VST host and it should be able to discover the plugin. The
-resulting bundle should work on both x86-64 and ARM64 (M1) Macs.
+start your DAW/VST host and it should be able to discover the plugin.~~ 
+The symlinking is currently broken and you need to manually copy the VST bundle.
+
+The resulting bundle should work on both x86-64 and ARM64 Macs.
 
 #### Code signing
 

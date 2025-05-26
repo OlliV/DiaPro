@@ -64,7 +64,7 @@ void GainParameter::toString (ParamValue normValue, String128 string) const
 
 bool GainParameter::fromString (const TChar* string, ParamValue& normValue) const
 {
-    String wrapper ((TChar*)string); // don't know buffer size here!
+    UString wrapper ((TChar*)string, -1); // don't know buffer size here!
     double tmp = 0.0;
 
     if (wrapper.scanFloat(tmp)) {
@@ -85,7 +85,6 @@ tresult PLUGIN_API DiaProController::initialize (FUnknown* context)
 
     //--- Create Units-------------
     UnitInfo unitInfo;
-    Unit* unit;
     Parameter *param;
 
     // compressor

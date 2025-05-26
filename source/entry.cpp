@@ -11,23 +11,20 @@
 
 #define stringPluginName "DiaPro"
 
-//------------------------------------------------------------------------
-//  Module init/exit
-//------------------------------------------------------------------------
-
-//------------------------------------------------------------------------
-// called after library was loaded
+/*
+ * RFE This is now duplicated somewhere in the SDK?
+ */
+#if 0
 bool InitModule ()
 {
 	return true;
 }
 
-//------------------------------------------------------------------------
-// called after library is unloaded
 bool DeinitModule ()
 {
 	return true;
 }
+#endif
 
 using namespace Steinberg::Vst;
 using namespace MyVst;
