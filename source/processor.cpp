@@ -454,9 +454,10 @@ tresult PLUGIN_API DiaProProcessor::setBusArrangements (Steinberg::Vst::SpeakerA
             auto* bus = FCast<Steinberg::Vst::AudioBus>(audioInputs.at (0));
             if (bus) {
                 // check if we are Mono => Mono, if not we need to recreate the busses
-                if (bus->getArrangement() != inputs[0]) {
+                if (bus->getArrangement() != Steinberg::Vst::SpeakerArr::kMono) {
                     getAudioInput(0)->setArrangement(inputs[0]);
                     getAudioInput(0)->setName(STR16("Mono In"));
+                    // TODO Is this wrong?
                     getAudioOutput(0)->setArrangement(inputs[0]);
                     getAudioOutput(0)->setName (STR16("Mono Out"));
                 }
